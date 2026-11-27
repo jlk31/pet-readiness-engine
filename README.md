@@ -11,9 +11,10 @@ app/
   layout.tsx                 ✓
   page.tsx                   ✓ # simulator: lifestyle form, score, 2–3 pet comparison, lifetime chart
   scenarios/page.tsx           # saved scenarios (auth)
-  resume/[id]/page.tsx         # printable Landlord Pet Resume + checklist (window.print)
   api/vets/route.ts          ✓ # Overpass vet search near a lat/lon, cached a week per ~100m
-components/Simulator.tsx     ✓ # UI only, no business logic
+components/
+  Simulator.tsx              ✓ # form, cards, side-by-side table, chart, vets, breakdown
+  Resume.tsx                 ✓ # Landlord Pet Resume + shopping checklist (print / copy as text)
 lib/
   types.ts                   ✓ # mirrors the DB schema
   engine.ts                  ✓ # pure functions: readiness score, gap costs, lifetime projection

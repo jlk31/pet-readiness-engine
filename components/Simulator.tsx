@@ -5,7 +5,8 @@ import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Too
 import { MULTIPLIERS, SPECIES } from '@/lib/data';
 import { DEFAULT_ASSUMPTIONS, gbp, multipliersFor, simulate, type Assumptions, type Issue, type Simulation } from '@/lib/engine';
 import { lookupPostcode, UK_REGIONS, type Vet } from '@/lib/location';
-import type { Lifestyle, WhatIfs } from '@/lib/types';
+import type { Lifestyle, SpeciesWithCosts, WhatIfs } from '@/lib/types';
+import Resume from './Resume';
 
 const SERIES = ['var(--s1)', 'var(--s2)', 'var(--s3)'];
 const FREQ = { one_off: 'one-off', monthly: '/month', annual: '/year', per_night: '/night', emergency: 'if needed' } as const;
@@ -27,6 +28,7 @@ export default function Simulator() {
   const [whatIfs, setWhatIfs] = useState<WhatIfs>({ emergency_year: 1 });
   const [assume, setAssume] = useState<Assumptions>(DEFAULT_ASSUMPTIONS);
   const [perYear, setPerYear] = useState(false);
+  const [resumeFor, setResumeFor] = useState<string | null>(null);
   const [vets, setVets] = useState<Vet[] | 'loading' | { error: string } | null>(null);
 
   const set = <K extends keyof Lifestyle>(k: K, v: Lifestyle[K]) => setLife((l) => ({ ...l, [k]: v }));
@@ -67,6 +69,9 @@ export default function Simulator() {
       setVets({ error: 'Vet search is unavailable right now. Try again in a minute.' });
     }
   }
+
+  const resume = results.find((r) => r.sp.id === resumeFor);
+  if (resume) return <Resume sp={resume.sp} sim={resume.sim} life={life} region={region} onClose={() => setResumeFor(null)} />;
 
   return (
     <div className="mx-auto max-w-7xl py-8 pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))]">
@@ -167,8 +172,13 @@ export default function Simulator() {
           ) : (
             <>
               <section className="grid gap-4 md:grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]">
-                {results.map(({ sp, sim }, i) => <PetCard key={sp.id} name={sp.name} sim={sim} color={SERIES[i]} emergencyOn={!!whatIfs.emergency} />)}
+                {results.map(({ sp, sim }, i) => (
+                  <PetCard key={sp.id} name={sp.name} sim={sim} color={SERIES[i]} emergencyOn={!!whatIfs.emergency}
+                    onResume={() => { setResumeFor(sp.id); scrollTo(0, 0); }} />
+                ))}
               </section>
+
+              {results.length > 1 && <Comparison results={results} />}
 
               <section className="rounded-xl border border-line bg-surface p-5">
                 <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -245,7 +255,7 @@ export default function Simulator() {
   );
 }
 
-function PetCard({ name, sim, color, emergencyOn }: { name: string; sim: Simulation; color: string; emergencyOn: boolean }) {
+function PetCard({ name, sim, color, emergencyOn, onResume }: { name: string; sim: Simulation; color: string; emergencyOn: boolean; onResume: () => void }) {
   const { score, issues } = sim.readiness;
   const band = score >= 80 ? ['Good fit', 'text-good'] : score >= 50 ? ['Workable with changes', 'text-warn'] : ['Poor fit', 'text-bad'];
   return (
@@ -272,7 +282,60 @@ function PetCard({ name, sim, color, emergencyOn }: { name: string; sim: Simulat
       <ul className="flex flex-col gap-1 text-sm">
         {issues.map((i) => <li key={i.message} className={SEVERITY[i.severity]}>{i.message}</li>)}
       </ul>
+      <button type="button" onClick={onResume} className="mt-auto self-start rounded-md border border-line px-3 py-2 text-sm font-semibold text-accent hover:border-accent">
+        Landlord resume &amp; checklist
+      </button>
     </article>
+  );
+}
+
+type Row = [label: string, value: (sp: SpeciesWithCosts, sim: Simulation) => number, format: (n: number) => string, best: 'low' | 'high' | null];
+const ROWS: Row[] = [
+  ['Fit score', (_, s) => s.readiness.score, String, 'high'],
+  ['Upfront', (_, s) => s.upfront, gbp, 'low'],
+  ['Per month (today)', (_, s) => s.monthly, gbp, 'low'],
+  ['Average per month', (_, s) => s.monthlyAverage, gbp, 'low'],
+  ['Most expensive year', (_, s) => s.peak.cost, gbp, 'low'],
+  ['Lifetime total', (_, s) => s.lifetime, gbp, 'low'],
+  ['Emergency costs you', (_, s) => s.emergency, gbp, 'low'],
+  ['Years projected', (_, s) => s.years.length, String, null],
+  ['Can be left alone', (sp) => sp.max_hours_alone, (n) => `${n}h`, 'high'],
+  ['Noise', (sp) => sp.noise_level, (n) => `${n}/5`, 'low'],
+  ['Allergen level', (sp) => sp.allergen_level, (n) => `${n}/5`, 'low'],
+];
+
+function Comparison({ results }: { results: { sp: SpeciesWithCosts; sim: Simulation }[] }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="font-display text-xl font-semibold">Side by side</h2>
+      <div className="overflow-x-auto rounded-xl border border-line bg-surface">
+        <table className="w-full text-sm tabular-nums">
+          <thead>
+            <tr className="text-left">
+              <th className="p-3 font-semibold text-muted">Best value highlighted</th>
+              {results.map(({ sp }) => <th key={sp.id} scope="col" className="p-3 text-right font-semibold">{sp.name}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {ROWS.map(([label, value, format, best]) => {
+              const vals = results.map((r) => value(r.sp, r.sim));
+              const target = best === 'low' ? Math.min(...vals) : best === 'high' ? Math.max(...vals) : null;
+              const tie = vals.every((v) => v === target);
+              return (
+                <tr key={label} className="border-t border-line">
+                  <th scope="row" className="p-3 text-left font-normal text-muted">{label}</th>
+                  {vals.map((v, i) => (
+                    <td key={results[i].sp.id} className={`p-3 text-right font-mono ${v === target && !tie ? 'font-semibold text-good' : ''}`}>
+                      {format(v)}{v === target && !tie && <span className="sr-only"> (best)</span>}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 

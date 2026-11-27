@@ -9,7 +9,7 @@ const js = (await build({
     loader: 'tsx', resolveDir: '.',
   },
   bundle: true, minify: true, write: false, jsx: 'automatic', format: 'iife', logLevel: 'error',
-  define: { 'process.env.NODE_ENV': '"production"' },
+  define: { 'process.env.NODE_ENV': '"production"', 'process.env.NEXT_PUBLIC_PREVIEW': '"1"' },
 })).outputFiles[0].text.replaceAll('</script', '<\\/script');
 const css = execFileSync('npx', ['@tailwindcss/cli', '-i', 'app/globals.css', '--minify'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 

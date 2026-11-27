@@ -25,6 +25,9 @@ export interface Assumptions {
 
 export const DEFAULT_ASSUMPTIONS: Assumptions = { startAge: 1, generalInflation: 0.03, medicalInflation: 0.06 };
 
+// ponytail: one typical UK lifetime-policy excess for every species; make it a cost_items column if policies differ
+export const INSURANCE_EXCESS: Pence = 15000;
+
 export interface CostLine {
   item: CostItem;
   amount: Pence;   // after regional multiplier, before inflation
@@ -43,9 +46,12 @@ export interface Simulation {
   lines: CostLine[];
   upfront: Pence;
   monthly: Pence;  // true monthly: monthly + annual/12 + boarding/12, today's prices
-  emergency: Pence;
+  emergency: Pence; // what an emergency costs you today: the excess if insured, the full bill if not
+  insured: boolean;
   years: YearPoint[];
   lifetime: Pence;
+  peak: YearPoint;        // most expensive year
+  monthlyAverage: Pence;  // lifetime / months, the amount to budget
 }
 
 /** Region is Postcodes.io `region` (England) or `country`. Unknown region/service => 1. */
@@ -110,7 +116,7 @@ export function simulate(
   const lines: CostLine[] = sp.cost_items.map((item) => ({
     item,
     amount: Math.round(item.amount_pence * (item.service ? mult[item.service] : 1)),
-    active: !item.trigger || readiness.triggers.includes(item.trigger),
+    active: (!item.trigger || readiness.triggers.includes(item.trigger)) && !(whatIfs.uninsured && item.service === 'insurance'),
   }));
   const active = lines.filter((l) => l.active);
   const nights = life.holiday_nights_per_year + (whatIfs.extra_boarding_nights ?? 0);
@@ -122,28 +128,38 @@ export function simulate(
   const sum = (f: (l: CostLine) => number) => active.reduce((t, l) => t + f(l), 0);
 
   const upfront = sum((l) => (l.item.frequency === 'one_off' ? l.amount : 0));
-  const emergency = sum((l) => (l.item.frequency === 'emergency' ? l.amount : 0));
+  const insured = active.some((l) => l.item.service === 'insurance');
+  const bill = sum((l) => (l.item.frequency === 'emergency' ? l.amount : 0));
+  const emergency = insured ? Math.min(bill, INSURANCE_EXCESS) : bill;
   const monthly = Math.round(sum(perYear) / 12);
 
-  const horizon = Math.max(1, a.years ?? sp.lifespan_years - a.startAge);
+  const startAge = Math.min(a.startAge, sp.lifespan_years - 1);
+  const horizon = Math.max(1, a.years ?? sp.lifespan_years - startAge);
+  const emergencyYear = Math.min(Math.max(1, whatIfs.emergency_year ?? 1), horizon);
   const years: YearPoint[] = [];
   let cumulative = 0;
   for (let year = 1; year <= horizon; year++) {
-    const age = a.startAge + year - 1;
+    const age = startAge + year - 1;
     let cost = sum((l) => {
       const medical = l.item.service === 'vet' || l.item.service === 'insurance';
       const inflation = (1 + (medical ? a.medicalInflation : a.generalInflation)) ** (year - 1);
       const senior = age >= sp.senior_age_years ? Number(l.item.senior_multiplier) : 1;
       return perYear(l) * inflation * senior;
     });
-    // ponytail: emergency lands in year 1 (worst case for cash flow); add a chosen year if users ask
-    if (year === 1) cost += upfront + (whatIfs.emergency ? emergency : 0);
+    if (year === 1) cost += upfront;
+    if (whatIfs.emergency && year === emergencyYear) {
+      cost += insured ? emergency : emergency * (1 + a.medicalInflation) ** (year - 1); // excess doesn't inflate
+    }
     cost = Math.round(cost);
     cumulative += cost;
     years.push({ year, age, cost, cumulative });
   }
 
-  return { readiness, lines, upfront, monthly, emergency, years, lifetime: cumulative };
+  const peak = years.reduce((m, y) => (y.cost > m.cost ? y : m));
+  return {
+    readiness, lines, upfront, monthly, emergency, insured, years, lifetime: cumulative, peak,
+    monthlyAverage: Math.round(cumulative / (horizon * 12)),
+  };
 }
 
 export const gbp = (p: Pence) =>

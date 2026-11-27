@@ -1,9 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { MULTIPLIERS, SPECIES } from '@/lib/data';
-import { DEFAULT_ASSUMPTIONS, gbp, multipliersFor, simulate, type Issue, type Simulation } from '@/lib/engine';
+import { DEFAULT_ASSUMPTIONS, gbp, multipliersFor, simulate, type Assumptions, type Issue, type Simulation } from '@/lib/engine';
 import { lookupPostcode, UK_REGIONS, type Vet } from '@/lib/location';
 import type { Lifestyle, WhatIfs } from '@/lib/types';
 
@@ -24,20 +24,23 @@ export default function Simulator() {
   const [place, setPlace] = useState<string | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [picked, setPicked] = useState<string[]>(SPECIES.map((s) => s.id).slice(0, 3));
-  const [whatIfs, setWhatIfs] = useState<WhatIfs>({});
+  const [whatIfs, setWhatIfs] = useState<WhatIfs>({ emergency_year: 1 });
+  const [assume, setAssume] = useState<Assumptions>(DEFAULT_ASSUMPTIONS);
+  const [perYear, setPerYear] = useState(false);
   const [vets, setVets] = useState<Vet[] | 'loading' | { error: string } | null>(null);
 
   const set = <K extends keyof Lifestyle>(k: K, v: Lifestyle[K]) => setLife((l) => ({ ...l, [k]: v }));
   const mult = useMemo(() => multipliersFor(region, MULTIPLIERS), [region]);
   const results = useMemo(
-    () => SPECIES.filter((s) => picked.includes(s.id)).map((sp) => ({ sp, sim: simulate(sp, life, mult, whatIfs) })),
-    [picked, life, mult, whatIfs],
+    () => SPECIES.filter((s) => picked.includes(s.id)).map((sp) => ({ sp, sim: simulate(sp, life, mult, whatIfs, assume) })),
+    [picked, life, mult, whatIfs, assume],
   );
   const chart = useMemo(() => {
     const n = Math.max(0, ...results.map((r) => r.sim.years.length));
     return Array.from({ length: n }, (_, i) =>
-      Object.fromEntries([['year', i + 1], ...results.map((r) => [r.sp.id, r.sim.years[i]?.cumulative])]));
-  }, [results]);
+      Object.fromEntries([['year', i + 1], ...results.map((r) => [r.sp.id, perYear ? r.sim.years[i]?.cost : r.sim.years[i]?.cumulative])]));
+  }, [results, perYear]);
+  const maxYears = chart.length;
 
   async function onLookup(e: React.FormEvent) {
     e.preventDefault();
@@ -127,10 +130,33 @@ export default function Simulator() {
 
           <fieldset className="flex flex-col gap-2">
             <legend className="mb-2 text-sm font-semibold">Stress test</legend>
-            <Check id="emergency" label="Emergency vet bill in year 1" checked={!!whatIfs.emergency}
+            <Check id="emergency" label="Emergency vet bill" checked={!!whatIfs.emergency}
               onChange={(v) => setWhatIfs((w) => ({ ...w, emergency: v }))} />
+            {whatIfs.emergency && (
+              <Range id="emergency-year" label="Happens in year" value={whatIfs.emergency_year ?? 1} min={1} max={Math.max(1, maxYears)} suffix=""
+                onChange={(v) => setWhatIfs((w) => ({ ...w, emergency_year: v }))} />
+            )}
+            <Check id="uninsured" label="No pet insurance" checked={!!whatIfs.uninsured}
+              onChange={(v) => setWhatIfs((w) => ({ ...w, uninsured: v }))} />
             <Check id="boarding" label="Extra 2-week holiday every year" checked={!!whatIfs.extra_boarding_nights}
               onChange={(v) => setWhatIfs((w) => ({ ...w, extra_boarding_nights: v ? 14 : 0 }))} />
+          </fieldset>
+
+          <fieldset className="flex flex-col gap-3">
+            <legend className="mb-2 text-sm font-semibold">Assumptions</legend>
+            <Range id="start-age" label="Pet's age when you get them" value={assume.startAge} min={0} max={10} suffix=" yrs"
+              onChange={(v) => setAssume((a) => ({ ...a, startAge: v }))} />
+            <div className="flex flex-col gap-1">
+              <label htmlFor="horizon" className="text-sm font-semibold">Project over</label>
+              <select id="horizon" value={assume.years ?? ''} onChange={(e) => setAssume((a) => ({ ...a, years: e.target.value ? Number(e.target.value) : undefined }))}
+                className="rounded-md border border-line bg-bg px-3 py-2 text-sm">
+                <option value="">Each pet's remaining lifespan</option>
+                <option value="10">10 years</option>
+                <option value="15">15 years</option>
+              </select>
+            </div>
+            <Range id="medical-inflation" label="Vet & insurance price rises" value={Math.round(assume.medicalInflation * 100)} min={0} max={12} suffix="%/yr"
+              onChange={(v) => setAssume((a) => ({ ...a, medicalInflation: v / 100 }))} />
           </fieldset>
         </aside>
 
@@ -145,19 +171,33 @@ export default function Simulator() {
               </section>
 
               <section className="rounded-xl border border-line bg-surface p-5">
-                <h2 className="font-display text-xl font-semibold">Lifetime cost, year by year</h2>
-                <p className="mb-4 text-sm text-muted">
-                  Cumulative total from the year you get them. Assumes prices rise {DEFAULT_ASSUMPTIONS.generalInflation * 100}% a year,
-                  vet and insurance {DEFAULT_ASSUMPTIONS.medicalInflation * 100}%, with senior uplifts on insurance and check-ups.
-                </p>
+                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 max-w-[65ch]">
+                    <h2 className="font-display text-xl font-semibold">Lifetime cost, year by year</h2>
+                    <p className="text-sm text-muted">
+                      {perYear ? 'What each year costs.' : 'Running total from the year you get them.'} Other prices rise {assume.generalInflation * 100}% a year,
+                      vet and insurance {Math.round(assume.medicalInflation * 100)}%. Insurance and check-ups cost more once a pet is a senior.
+                    </p>
+                  </div>
+                  <div role="group" aria-label="Chart view" className="flex rounded-md border border-line p-0.5 text-sm">
+                    {[['Running total', false], ['Per year', true]].map(([label, v]) => (
+                      <button key={String(label)} type="button" aria-pressed={perYear === v} onClick={() => setPerYear(v as boolean)}
+                        className={`rounded px-3 py-1 ${perYear === v ? 'bg-accent font-semibold text-accent-fg' : 'text-muted'}`}>{label}</button>
+                    ))}
+                  </div>
+                </div>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chart} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
                       <CartesianGrid stroke="var(--line)" vertical={false} />
                       <XAxis dataKey="year" tick={{ fill: 'var(--muted)', fontSize: 12 }} stroke="var(--line)" label={{ value: 'Year', position: 'insideBottomRight', offset: -2, fill: 'var(--muted)', fontSize: 12 }} />
-                      <YAxis tickFormatter={(v: number) => `£${Math.round(v / 100000)}k`} tick={{ fill: 'var(--muted)', fontSize: 12 }} stroke="var(--line)" width={48} />
+                      <YAxis tickFormatter={(v: number) => `£${(v / 100000).toLocaleString('en-GB', { maximumFractionDigits: 1 })}k`} tick={{ fill: 'var(--muted)', fontSize: 12 }} stroke="var(--line)" width={48} />
                       <Tooltip formatter={(v) => gbp(Number(v))} labelFormatter={(y) => `Year ${y}`}
                         contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--fg)', borderRadius: 8 }} />
+                      {whatIfs.emergency && (
+                        <ReferenceLine x={Math.min(whatIfs.emergency_year ?? 1, maxYears)} stroke="var(--bad)" strokeDasharray="4 3"
+                          label={{ value: 'Emergency', position: 'insideTopLeft', fill: 'var(--bad)', fontSize: 12 }} />
+                      )}
                       {results.map(({ sp }, i) => (
                         <Line key={sp.id} dataKey={sp.id} name={sp.name} stroke={SERIES[i]} strokeWidth={2.5} dot={false} connectNulls={false} />
                       ))}
@@ -222,7 +262,13 @@ function PetCard({ name, sim, color, emergencyOn }: { name: string; sim: Simulat
         <Figure label="Per month" value={gbp(sim.monthly)} />
         <Figure label={`${sim.years.length} years`} value={gbp(sim.lifetime)} />
       </dl>
-      {!emergencyOn && <p className="text-xs text-muted">An emergency could add {gbp(sim.emergency)}.</p>}
+      <p className="text-sm">
+        Budget <strong className="font-mono">{gbp(sim.monthlyAverage)}</strong>/month on average. Most expensive: year {sim.peak.year} at <strong className="font-mono">{gbp(sim.peak.cost)}</strong>.
+      </p>
+      <p className="text-xs text-muted">
+        {sim.insured ? `Insured: an emergency costs you the ${gbp(sim.emergency)} excess.` : `Uninsured: an emergency costs you ${gbp(sim.emergency)} at today's prices.`}
+        {!emergencyOn && ' Turn on the stress test to add it.'}
+      </p>
       <ul className="flex flex-col gap-1 text-sm">
         {issues.map((i) => <li key={i.message} className={SEVERITY[i.severity]}>{i.message}</li>)}
       </ul>

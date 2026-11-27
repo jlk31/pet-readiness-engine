@@ -59,7 +59,9 @@ export interface Lifestyle {
 /** Stress-test toggles (saved_scenarios.what_ifs). */
 export interface WhatIfs {
   emergency?: boolean;          // include each species' emergency cost item once
+  emergency_year?: number;      // 1-based year it happens (default 1)
   extra_boarding_nights?: number;
+  uninsured?: boolean;          // drop insurance premiums; emergencies paid in full
 }
 
 export interface SavedScenario {

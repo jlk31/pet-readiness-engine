@@ -12,14 +12,15 @@ app/
   page.tsx                   ✓ # simulator: lifestyle form, score, 2–3 pet comparison, lifetime chart
   scenarios/page.tsx           # saved scenarios (auth)
   resume/[id]/page.tsx         # printable Landlord Pet Resume + checklist (window.print)
-  api/location/route.ts        # Postcodes.io + Overpass proxy, cached with `revalidate`
+  api/vets/route.ts          ✓ # Overpass vet search near a lat/lon, cached a week per ~100m
 components/Simulator.tsx     ✓ # UI only, no business logic
 lib/
   types.ts                   ✓ # mirrors the DB schema
   engine.ts                  ✓ # pure functions: readiness score, gap costs, lifetime projection
   engine.test.ts             ✓
   data.ts                    ✓ # reads seed.json until Supabase is linked
-  location.ts                ✓ # postcode -> region (Overpass vets/parks next)
+  location.ts                ✓ # postcode -> region + lat/lon; Overpass results -> nearest vets
+  location.test.ts           ✓
   supabase.ts                  # @supabase/ssr server + browser clients
 supabase/
   migrations/20261127000000_init.sql ✓
@@ -52,3 +53,7 @@ supabase db reset   # applies migrations + seed.sql
 - `cost_items.trigger` marks gap costs added by the scorer (e.g. dog walker when `hours_out_per_day > max_hours_alone`).
 - `per_night` and `emergency` items only feed the what-if toggles.
 - Regions are matched on Postcodes.io `region` (England) or `country` (Scotland/Wales/NI); a missing row means a multiplier of 1.00.
+
+## Environment
+
+- `OVERPASS_URL` (optional): Overpass endpoint for the vet search. Defaults to `https://overpass-api.de/api/interpreter`; set a mirror if the public server is overloaded.

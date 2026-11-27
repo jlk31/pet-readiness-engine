@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { MULTIPLIERS, SPECIES } from '@/lib/data';
 import { DEFAULT_ASSUMPTIONS, gbp, multipliersFor, simulate, type Issue, type Simulation } from '@/lib/engine';
-import { lookupPostcode, UK_REGIONS } from '@/lib/location';
+import { lookupPostcode, UK_REGIONS, type Vet } from '@/lib/location';
 import type { Lifestyle, WhatIfs } from '@/lib/types';
 
 const SERIES = ['var(--s1)', 'var(--s2)', 'var(--s3)'];
@@ -25,6 +25,7 @@ export default function Simulator() {
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [picked, setPicked] = useState<string[]>(SPECIES.map((s) => s.id).slice(0, 3));
   const [whatIfs, setWhatIfs] = useState<WhatIfs>({});
+  const [vets, setVets] = useState<Vet[] | 'loading' | { error: string } | null>(null);
 
   const set = <K extends keyof Lifestyle>(k: K, v: Lifestyle[K]) => setLife((l) => ({ ...l, [k]: v }));
   const mult = useMemo(() => multipliersFor(region, MULTIPLIERS), [region]);
@@ -45,9 +46,22 @@ export default function Simulator() {
       const r = await lookupPostcode(postcode);
       setRegion(r.region);
       setPlace(`${r.district}, ${r.region}`);
+      findVets(r.lat, r.lon);
     } catch (err) {
       setPlace(null);
+      setVets(null);
       setLookupError(`${err instanceof Error ? err.message : 'Lookup failed.'} Pick your region below instead.`);
+    }
+  }
+
+  async function findVets(lat: number, lon: number) {
+    setVets('loading');
+    try {
+      const res = await fetch(`/api/vets?lat=${lat}&lon=${lon}`);
+      const body = await res.json();
+      setVets(res.ok ? body : { error: body.error });
+    } catch {
+      setVets({ error: 'Vet search is unavailable right now. Try again in a minute.' });
     }
   }
 
@@ -75,7 +89,7 @@ export default function Simulator() {
             {place && <p className="text-sm text-good">{place}</p>}
             {lookupError && <p className="text-sm text-warn">{lookupError}</p>}
             <label htmlFor="region" className="sr-only">Region</label>
-            <select id="region" value={region} onChange={(e) => { setRegion(e.target.value); setPlace(null); }}
+            <select id="region" value={region} onChange={(e) => { setRegion(e.target.value); setPlace(null); setVets(null); }}
               className="rounded-md border border-line bg-bg px-3 py-2 text-sm">
               {UK_REGIONS.map((r) => <option key={r}>{r}</option>)}
             </select>
@@ -152,6 +166,8 @@ export default function Simulator() {
                 </div>
               </section>
 
+              {vets && <VetList vets={vets} postcode={postcode} exotic={results.filter((r) => ['reptile', 'bird'].includes(r.sp.kind)).map((r) => r.sp.name)} />}
+
               <section className="flex flex-col gap-3">
                 <h2 className="font-display text-xl font-semibold">Cost breakdown</h2>
                 {results.map(({ sp, sim }) => (
@@ -211,6 +227,42 @@ function PetCard({ name, sim, color, emergencyOn }: { name: string; sim: Simulat
         {issues.map((i) => <li key={i.message} className={SEVERITY[i.severity]}>{i.message}</li>)}
       </ul>
     </article>
+  );
+}
+
+function VetList({ vets, postcode, exotic }: { vets: Vet[] | 'loading' | { error: string }; postcode: string; exotic: string[] }) {
+  return (
+    <section className="flex flex-col gap-3" aria-live="polite">
+      <div>
+        <h2 className="font-display text-xl font-semibold">Vets near {postcode.toUpperCase()}</h2>
+        {exotic.length > 0 && (
+          <p className="text-sm text-warn">{exotic.join(' and ')} need{exotic.length === 1 ? 's' : ''} an exotics vet. Not every practice treats them, so call ahead.</p>
+        )}
+      </div>
+      {vets === 'loading' ? (
+        <p className="text-sm text-muted">Searching OpenStreetMap within 10 km…</p>
+      ) : 'error' in vets ? (
+        <p className="text-sm text-warn">{vets.error}</p>
+      ) : vets.length === 0 ? (
+        <p className="text-sm text-muted">No vets are mapped within 10 km. Try a nearby town's postcode.</p>
+      ) : (
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {vets.map((v) => (
+            <li key={v.id} className="flex min-w-0 flex-col gap-1 rounded-xl border border-line bg-surface p-4">
+              <div className="flex items-start justify-between gap-3">
+                <a href={`https://www.openstreetmap.org/${v.id}`} target="_blank" rel="noreferrer" className="font-semibold underline-offset-2 hover:underline">{v.name}</a>
+                <span className="whitespace-nowrap font-mono text-sm tabular-nums text-muted">{v.km.toFixed(1)} km</span>
+              </div>
+              {v.emergency && <span className="self-start rounded-full border border-good px-2 text-xs font-semibold text-good">24-hour / emergency</span>}
+              {v.address && <p className="text-sm text-muted">{v.address}</p>}
+              {v.phone && <p className="select-all font-mono text-sm">{v.phone}</p>}
+              {v.website && <a href={v.website} target="_blank" rel="noreferrer" className="truncate text-sm text-accent underline-offset-2 hover:underline">{v.website.replace(/^https?:\/\//, '')}</a>}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="text-xs text-muted">Practice data © OpenStreetMap contributors. Check opening hours with the practice.</p>
+    </section>
   );
 }
 

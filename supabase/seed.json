@@ -1,0 +1,92 @@
+{
+  "_note": "UK prices, late 2026, rescue/adoption route. Amounts in pence. Run `npm run seed:sql` after editing.",
+  "species": [
+    {
+      "id": "indoor-adult-cat", "kind": "cat", "name": "Indoor Adult Cat",
+      "lifespan_years": 15, "senior_age_years": 11, "housing": "flat_ok", "max_hours_alone": 10,
+      "daily_exercise_mins": 20, "noise_level": 2, "allergen_level": 5, "microchip_required": true,
+      "legal_notes": "Microchipping compulsory in England for cats over 20 weeks (since June 2024). Check tenancy pet clause.",
+      "traits": { "litter_trained": true },
+      "cost_items": [
+        { "name": "Rescue adoption fee (chipped, vaccinated, neutered)", "frequency": "one_off", "amount_pence": 9500 },
+        { "name": "Litter tray, scoop & mat", "frequency": "one_off", "amount_pence": 2500 },
+        { "name": "Scratching post / cat tree", "frequency": "one_off", "amount_pence": 4500 },
+        { "name": "Carrier", "frequency": "one_off", "amount_pence": 3000 },
+        { "name": "Bed, bowls & toys", "frequency": "one_off", "amount_pence": 4000, "is_essential": false },
+        { "name": "Initial vet health check", "frequency": "one_off", "amount_pence": 6000, "service": "vet" },
+        { "name": "Food (wet + dry)", "frequency": "monthly", "amount_pence": 3500 },
+        { "name": "Cat litter", "frequency": "monthly", "amount_pence": 1200 },
+        { "name": "Flea & worm treatment", "frequency": "monthly", "amount_pence": 1200, "service": "vet" },
+        { "name": "Lifetime pet insurance", "frequency": "monthly", "amount_pence": 1800, "service": "insurance", "senior_multiplier": 2.2 },
+        { "name": "Annual booster & health check", "frequency": "annual", "amount_pence": 6500, "service": "vet", "senior_multiplier": 1.5 },
+        { "name": "Cattery boarding", "frequency": "per_night", "amount_pence": 1600, "service": "sitter" },
+        { "name": "Emergency vet treatment (e.g. urinary blockage)", "frequency": "emergency", "amount_pence": 150000, "service": "vet" }
+      ]
+    },
+    {
+      "id": "medium-dog", "kind": "dog", "name": "Medium Dog (e.g. Spaniel cross)",
+      "lifespan_years": 13, "senior_age_years": 8, "housing": "house_with_garden", "max_hours_alone": 4,
+      "daily_exercise_mins": 90, "noise_level": 4, "allergen_level": 4, "microchip_required": true,
+      "legal_notes": "Microchip compulsory (Microchipping of Dogs (England) Regulations 2015). Collar ID tag with owner name/address required (Control of Dogs Order 1992). Dangerous Dogs Act applies.",
+      "traits": { "coat": "medium", "needs_training": true },
+      "cost_items": [
+        { "name": "Rescue adoption fee (chipped, vaccinated, neutered)", "frequency": "one_off", "amount_pence": 25000 },
+        { "name": "Crate & bed", "frequency": "one_off", "amount_pence": 10000 },
+        { "name": "Collar, ID tag, harness & lead", "frequency": "one_off", "amount_pence": 4500 },
+        { "name": "Bowls & toys", "frequency": "one_off", "amount_pence": 4500, "is_essential": false },
+        { "name": "Initial vet health check", "frequency": "one_off", "amount_pence": 6000, "service": "vet" },
+        { "name": "Training classes (6-week course)", "frequency": "one_off", "amount_pence": 12000, "is_essential": false },
+        { "name": "Food", "frequency": "monthly", "amount_pence": 5000 },
+        { "name": "Flea, tick & worm treatment", "frequency": "monthly", "amount_pence": 1800, "service": "vet" },
+        { "name": "Poo bags & treats", "frequency": "monthly", "amount_pence": 1500 },
+        { "name": "Lifetime pet insurance", "frequency": "monthly", "amount_pence": 4500, "service": "insurance", "senior_multiplier": 2.5 },
+        { "name": "Dog walker (1 walk per workday)", "frequency": "monthly", "amount_pence": 30000, "service": "sitter", "trigger": "left_alone_too_long" },
+        { "name": "Annual booster & health check", "frequency": "annual", "amount_pence": 7500, "service": "vet", "senior_multiplier": 1.5 },
+        { "name": "Grooming (4 visits)", "frequency": "annual", "amount_pence": 18000, "is_essential": false },
+        { "name": "Kennel boarding", "frequency": "per_night", "amount_pence": 3000, "service": "sitter" },
+        { "name": "Emergency surgery (e.g. foreign body removal)", "frequency": "emergency", "amount_pence": 250000, "service": "vet" }
+      ]
+    },
+    {
+      "id": "leopard-gecko", "kind": "reptile", "name": "Leopard Gecko",
+      "lifespan_years": 18, "senior_age_years": 12, "housing": "flat_ok", "max_hours_alone": 48,
+      "daily_exercise_mins": 0, "noise_level": 1, "allergen_level": 1, "microchip_required": false,
+      "legal_notes": "No licence required to keep. Needs an exotics-capable vet; not all practices treat reptiles.",
+      "traits": { "vivarium_cm": "90x45x45", "hot_end_c": [30, 33], "cool_end_c": [22, 26], "diet": "insectivore" },
+      "cost_items": [
+        { "name": "Gecko purchase (captive-bred)", "frequency": "one_off", "amount_pence": 7000 },
+        { "name": "Vivarium 90x45x45cm", "frequency": "one_off", "amount_pence": 18000 },
+        { "name": "Heat mat + thermostat", "frequency": "one_off", "amount_pence": 4500 },
+        { "name": "UVB lighting kit", "frequency": "one_off", "amount_pence": 5000 },
+        { "name": "Hides, substrate & decor", "frequency": "one_off", "amount_pence": 6000 },
+        { "name": "Digital thermometer/hygrometer", "frequency": "one_off", "amount_pence": 1500 },
+        { "name": "Initial exotics vet check", "frequency": "one_off", "amount_pence": 6000, "service": "vet", "is_essential": false },
+        { "name": "Live insects", "frequency": "monthly", "amount_pence": 2000 },
+        { "name": "Calcium & vitamin supplements", "frequency": "monthly", "amount_pence": 400 },
+        { "name": "Electricity (heating & lighting)", "frequency": "monthly", "amount_pence": 800 },
+        { "name": "Exotic pet insurance", "frequency": "monthly", "amount_pence": 1000, "service": "insurance", "senior_multiplier": 1.5, "is_essential": false },
+        { "name": "UVB bulb replacement", "frequency": "annual", "amount_pence": 2500 },
+        { "name": "Annual exotics vet check", "frequency": "annual", "amount_pence": 6000, "service": "vet", "senior_multiplier": 1.3, "is_essential": false },
+        { "name": "Reptile sitter / boarding", "frequency": "per_night", "amount_pence": 800, "service": "sitter" },
+        { "name": "Emergency exotics vet (e.g. impaction)", "frequency": "emergency", "amount_pence": 40000, "service": "vet" }
+      ]
+    }
+  ],
+  "regional_multipliers": [
+    { "region": "London", "service": "vet", "multiplier": 1.30 },
+    { "region": "London", "service": "insurance", "multiplier": 1.35 },
+    { "region": "London", "service": "sitter", "multiplier": 1.40 },
+    { "region": "South East", "service": "vet", "multiplier": 1.15 },
+    { "region": "South East", "service": "insurance", "multiplier": 1.15 },
+    { "region": "South East", "service": "sitter", "multiplier": 1.20 },
+    { "region": "East of England", "service": "vet", "multiplier": 1.08 },
+    { "region": "East of England", "service": "insurance", "multiplier": 1.08 },
+    { "region": "East of England", "service": "sitter", "multiplier": 1.10 },
+    { "region": "North East", "service": "vet", "multiplier": 0.92 },
+    { "region": "North East", "service": "insurance", "multiplier": 0.95 },
+    { "region": "North East", "service": "sitter", "multiplier": 0.90 },
+    { "region": "Northern Ireland", "service": "vet", "multiplier": 0.90 },
+    { "region": "Northern Ireland", "service": "insurance", "multiplier": 0.95 },
+    { "region": "Northern Ireland", "service": "sitter", "multiplier": 0.85 }
+  ]
+}

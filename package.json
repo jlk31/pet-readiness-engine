@@ -1,0 +1,29 @@
+{
+  "name": "pawprint-ledger",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --test lib/*.test.ts",
+    "seed:sql": "node scripts/gen-seed.mjs > supabase/seed.sql",
+    "preview:html": "node scripts/preview.mjs"
+  },
+  "dependencies": {
+    "next": "^16.4.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "recharts": "^3.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.14",
+    "@tailwindcss/postcss": "^4.1.14",
+    "@types/node": "^22.18.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "esbuild": "^0.25.10",
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.9.3"
+  }
+}

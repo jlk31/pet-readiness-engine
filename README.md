@@ -8,22 +8,35 @@ Files marked ✓ exist; the rest is the target layout for upcoming phases.
 
 ```
 app/
-  layout.tsx
-  page.tsx                     # landing + postcode/lifestyle form
-  simulate/page.tsx            # readiness score + lifetime TCO chart (Recharts)
-  compare/page.tsx             # 2–3 species side by side
+  layout.tsx                 ✓
+  page.tsx                   ✓ # simulator: lifestyle form, score, 2–3 pet comparison, lifetime chart
   scenarios/page.tsx           # saved scenarios (auth)
   resume/[id]/page.tsx         # printable Landlord Pet Resume + checklist (window.print)
   api/location/route.ts        # Postcodes.io + Overpass proxy, cached with `revalidate`
-components/                    # UI only, no business logic
+components/Simulator.tsx     ✓ # UI only, no business logic
 lib/
   types.ts                   ✓ # mirrors the DB schema
-  engine.ts                    # pure functions: readiness score, gap costs, lifetime projection
-  location.ts                  # postcode -> region/lat-long, nearby vets/parks
+  engine.ts                  ✓ # pure functions: readiness score, gap costs, lifetime projection
+  engine.test.ts             ✓
+  data.ts                    ✓ # reads seed.json until Supabase is linked
+  location.ts                ✓ # postcode -> region (Overpass vets/parks next)
   supabase.ts                  # @supabase/ssr server + browser clients
 supabase/
   migrations/20261127000000_init.sql ✓
-  seed.sql                   ✓
+  seed.json                  ✓ # source of truth for seed data
+  seed.sql                   ✓ # generated: npm run seed:sql
+scripts/
+  gen-seed.mjs               ✓
+  preview.mjs                ✓ # npm run preview:html -> dist/preview.html (single self-contained page)
+```
+
+## Commands
+
+```bash
+npm run dev           # http://localhost:3000
+npm test              # engine tests (node:test, no framework)
+npm run seed:sql      # regenerate seed.sql after editing seed.json
+npm run preview:html  # bundle the simulator into one HTML file
 ```
 
 The engine stays as pure functions in `lib/engine.ts`, which can be tested without a DB or UI.

@@ -6,6 +6,7 @@ import { MULTIPLIERS, SPECIES } from '@/lib/data';
 import { DEFAULT_ASSUMPTIONS, gbp, multipliersFor, simulate, type Assumptions, type Issue, type Simulation } from '@/lib/engine';
 import { lookupPostcode, UK_REGIONS, type Vet } from '@/lib/location';
 import type { Lifestyle, SpeciesWithCosts, WhatIfs } from '@/lib/types';
+import type { ScenarioInput } from '@/lib/validate';
 import Resume from './Resume';
 
 const SERIES = ['var(--s1)', 'var(--s2)', 'var(--s3)'];
@@ -18,15 +19,24 @@ const EXAMPLE: Lifestyle = {
   allergies: false, noise_tolerance: 3, holiday_nights_per_year: 7,
 };
 
-export default function Simulator() {
-  const [life, setLife] = useState<Lifestyle>(EXAMPLE);
-  const [postcode, setPostcode] = useState('SE1 7PB');
-  const [region, setRegion] = useState('London');
+interface Props {
+  account?: { email: string | null } | null; // null = accounts not configured
+  initial?: ScenarioInput;
+  onSave?: (input: ScenarioInput) => Promise<{ error?: string; message?: string }>;
+  onSignOut?: () => Promise<void>;
+}
+
+export default function Simulator({ account = null, initial, onSave, onSignOut }: Props) {
+  const [life, setLife] = useState<Lifestyle>(initial?.lifestyle ?? EXAMPLE);
+  const [postcode, setPostcode] = useState(initial?.postcode ?? 'SE1 7PB');
+  const [region, setRegion] = useState(initial?.region ?? 'London');
   const [place, setPlace] = useState<string | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
-  const [picked, setPicked] = useState<string[]>(SPECIES.map((s) => s.id).slice(0, 3));
-  const [whatIfs, setWhatIfs] = useState<WhatIfs>({ emergency_year: 1 });
-  const [assume, setAssume] = useState<Assumptions>(DEFAULT_ASSUMPTIONS);
+  const [picked, setPicked] = useState<string[]>(initial?.species_ids ?? SPECIES.map((s) => s.id).slice(0, 3));
+  const [whatIfs, setWhatIfs] = useState<WhatIfs>(initial?.what_ifs ?? { emergency_year: 1 });
+  const [assume, setAssume] = useState<Assumptions>(initial?.assumptions ?? DEFAULT_ASSUMPTIONS);
+  const [scenarioName, setScenarioName] = useState(initial?.name ?? '');
+  const [saveState, setSaveState] = useState<{ error?: string; message?: string; saving?: boolean }>({});
   const [perYear, setPerYear] = useState(false);
   const [resumeFor, setResumeFor] = useState<string | null>(null);
   const [vets, setVets] = useState<Vet[] | 'loading' | { error: string } | null>(null);
@@ -59,6 +69,13 @@ export default function Simulator() {
     }
   }
 
+  async function onSaveClick(e: React.FormEvent) {
+    e.preventDefault();
+    if (!onSave) return;
+    setSaveState({ saving: true });
+    setSaveState(await onSave({ name: scenarioName, postcode, region, species_ids: picked, lifestyle: life, what_ifs: whatIfs, assumptions: assume }));
+  }
+
   async function findVets(lat: number, lon: number) {
     setVets('loading');
     try {
@@ -76,17 +93,46 @@ export default function Simulator() {
   return (
     <div className="mx-auto max-w-7xl py-8 pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))]">
       <header className="mb-8 flex flex-col gap-2">
-        <p className="font-mono text-xs uppercase tracking-widest text-accent">pawprint-ledger</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="font-mono text-xs uppercase tracking-widest text-accent">pawprint-ledger</p>
+          {account && (
+            <nav className="flex items-center gap-4 text-sm">
+              {account.email ? (
+                <>
+                  <span className="text-muted">{account.email}</span>
+                  <a href="/scenarios" className="font-semibold text-accent">My scenarios</a>
+                  {onSignOut && <form action={onSignOut}><button className="text-muted hover:text-fg">Sign out</button></form>}
+                </>
+              ) : (
+                <a href="/login" className="font-semibold text-accent">Sign in to save scenarios</a>
+              )}
+            </nav>
+          )}
+        </div>
         <h1 className="font-display text-3xl font-extrabold sm:text-4xl">What will this pet really cost you?</h1>
         <p className="max-w-[65ch] text-muted">
           UK prices adjusted for your region, extra costs added where your routine leaves gaps, and the full lifetime bill.
-          Starts with an example: renting a flat in London, out 9 hours a day.
+          {initial ? `Showing your saved scenario "${initial.name}".` : 'Starts with an example: renting a flat in London, out 9 hours a day.'}
         </p>
       </header>
 
       <div className="grid gap-8 lg:grid-cols-[20rem_1fr]">
         {/* Inputs */}
         <aside className="flex flex-col gap-6 self-start rounded-xl border border-line bg-surface p-5 lg:sticky lg:top-4">
+          {onSave && (
+            <form onSubmit={onSaveClick} className="flex flex-col gap-2 border-b border-line pb-5">
+              <label htmlFor="scenario-name" className="text-sm font-semibold">Save this scenario</label>
+              <div className="flex gap-2">
+                <input id="scenario-name" value={scenarioName} onChange={(e) => setScenarioName(e.target.value)} maxLength={80} required
+                  placeholder="e.g. Flat in Camden" className="min-w-0 flex-1 rounded-md border border-line bg-bg px-3 py-2 text-sm" />
+                <button disabled={saveState.saving} className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-accent-fg disabled:opacity-60">
+                  {saveState.saving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+              {saveState.error && <p className="text-sm text-bad" role="alert">{saveState.error}</p>}
+              {saveState.message && <p className="text-sm text-good" role="status">{saveState.message} <a href="/scenarios" className="underline">View all</a></p>}
+            </form>
+          )}
           <form onSubmit={onLookup} className="flex flex-col gap-2">
             <label htmlFor="postcode" className="text-sm font-semibold">Postcode</label>
             <div className="flex gap-2">

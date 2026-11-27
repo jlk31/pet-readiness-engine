@@ -8,13 +8,18 @@
     "start": "next start",
     "test": "node --test lib/*.test.ts",
     "seed:sql": "node scripts/gen-seed.mjs > supabase/seed.sql",
-    "preview:html": "node scripts/preview.mjs"
+    "preview:html": "node scripts/preview.mjs",
+    "typecheck": "tsc --noEmit",
+    "audit": "npm audit --audit-level=high"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.2",
     "next": "^16.4.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "recharts": "^3.3.0"
+    "recharts": "^3.3.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.14",

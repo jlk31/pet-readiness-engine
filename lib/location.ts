@@ -18,8 +18,6 @@ export interface Vet {
   id: string; // OSM "node/123" or "way/456"
   name: string;
   km: number;
-  lat: number;
-  lon: number;
   emergency: boolean;
   phone?: string;
   address?: string;
@@ -58,8 +56,6 @@ export function toVets(elements: OsmElement[], lat: number, lon: number, limit =
         id: `${e.type}/${e.id}`,
         name: t.name ?? 'Unnamed vet practice',
         km: distanceKm(lat, lon, p.lat, p.lon),
-        lat: p.lat,
-        lon: p.lon,
         emergency: t.emergency === 'yes' || t.opening_hours === '24/7',
         phone: t.phone ?? t['contact:phone'],
         address: address || undefined,

@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
+// Every page renders per request: the CSP nonce (proxy.ts) and the signed-in user are request-specific.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'pawprint-ledger',
   description: 'What a pet really costs in the UK, and whether it fits your life.',

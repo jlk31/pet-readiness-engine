@@ -18,8 +18,8 @@ export async function proxy(request: NextRequest) {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ''}`,
     // Inline style attributes (Recharts, React style props) need 'unsafe-inline'; scripts stay nonce-only.
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
+    "style-src 'self' 'unsafe-inline' https://api.fontshare.com",
+    "font-src 'self' https://cdn.fontshare.com https://api.fontshare.com",
     "img-src 'self' data: blob:",
     "connect-src 'self' https://api.postcodes.io",
     'frame-src https://challenges.cloudflare.com',

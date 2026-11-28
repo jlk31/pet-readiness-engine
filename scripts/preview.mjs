@@ -13,10 +13,20 @@ const js = (await build({
 })).outputFiles[0].text.replaceAll('</script', '<\\/script');
 const css = execFileSync('npx', ['@tailwindcss/cli', '-i', 'app/globals.css', '--minify'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 
+// The artifact cannot load external fonts: inline Satoshi's woff2 files as data: URLs.
+// curl, not fetch: fetch ignores the sandbox HTTPS proxy and cannot resolve the host.
+const get = (u) => execFileSync('curl', ['-sSfL', u], { maxBuffer: 1 << 26 });
+let fontCss = get('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap').toString()
+  .replace(/,\s*url\([^)]*\.(woff|ttf)['"]?\)\s*format\([^)]*\)/g, ''); // woff2 only
+for (const [, u] of [...fontCss.matchAll(/url\(["']?([^"')]+\.woff2)["']?\)/g)]) {
+  const b64 = get(u.startsWith('//') ? `https:${u}` : u).toString('base64');
+  fontCss = fontCss.replaceAll(u, `data:font/woff2;base64,${b64}`);
+}
+
 mkdirSync('dist', { recursive: true });
 writeFileSync('dist/preview.html', `<title>Pawprint Ledger</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>${fontCss}</style>
 <style>${css}</style>
 <div id="root"></div>
 <script>${js}</script>

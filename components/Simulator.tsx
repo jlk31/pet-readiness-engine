@@ -9,6 +9,7 @@ import type { Lifestyle, SpeciesWithCosts, WhatIfs } from '@/lib/types';
 import type { ScenarioInput } from '@/lib/validate';
 import Icon from './Icon';
 import PointMap from './PointMap';
+import RegionMap from './RegionMap';
 import Resume from './Resume';
 
 const SERIES = ['var(--s1)', 'var(--s2)', 'var(--s3)'];
@@ -90,6 +91,15 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
       setLookupError(err instanceof Error ? err.message : 'Lookup failed.');
       return false;
     }
+  }
+
+  // Built-in map (no Google key, or the artifact preview, where fetches are blocked): the region always applies;
+  // in the real app the exact point also goes through the same lookup and vet search as the Google map.
+  async function onPickRegion(name: string, lat: number, lon: number) {
+    if (process.env.NEXT_PUBLIC_PREVIEW !== '1' && await onPickPoint(lat, lon)) return;
+    setRegion(name);
+    setPoint({ lat, lon });
+    if (process.env.NEXT_PUBLIC_PREVIEW === '1') { setPlace(name); setVets(null); setLookupError(null); }
   }
 
   async function onSaveClick(e: React.FormEvent) {
@@ -181,11 +191,13 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
             {place && <p className="text-sm text-good">{place}</p>}
             {lookupError && <p className="text-sm text-warn">{lookupError}</p>}
             <label htmlFor="region" className="sr-only">Region</label>
-            <select id="region" value={region} onChange={(e) => { setRegion(e.target.value); setPlace(null); setVets(null); }}
+            <select id="region" value={region} onChange={(e) => { setRegion(e.target.value); setPlace(null); setVets(null); setPoint(null); }}
               className="field">
               {UK_REGIONS.map((r) => <option key={r}>{r}</option>)}
             </select>
-            <PointMap point={point} onPick={onPickPoint} />
+            {process.env.NEXT_PUBLIC_PREVIEW === '1' || !process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+              ? <RegionMap region={region} point={point} onPick={onPickRegion} />
+              : <PointMap point={point} onPick={onPickPoint} />}
           </form>
 
           <fieldset className="flex flex-col gap-2">
@@ -349,6 +361,8 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
       <footer className="mt-12 border-t border-line pt-6 text-xs text-muted">
         Pet silhouettes from <a href="https://game-icons.net" className="underline" target="_blank" rel="noreferrer">game-icons.net</a> by Lorc, Delapouite and contributors,
         licensed <a href="https://creativecommons.org/licenses/by/3.0/" className="underline" target="_blank" rel="noreferrer">CC BY 3.0</a>.
+        Region map: Contains National Statistics and OS data &copy; Crown copyright and database right 2026,
+        under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" className="underline" target="_blank" rel="noreferrer">Open Government Licence v3.0</a>.
       </footer>
     </div>
     </div>

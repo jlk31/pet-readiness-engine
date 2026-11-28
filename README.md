@@ -114,13 +114,15 @@ All variables are documented in `.env.example`.
 
 ### Exact-location map (optional)
 
-Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to show a Google map under the postcode box. Users click the map or drag the pin to set an exact spot; the nearest postcode (Postcodes.io) fills the postcode field and sets the region, and the vet search uses the exact point. Without the key there is no map and the postcode flow is unchanged.
+Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to show a Google map under the postcode box. Users click the map or drag the pin to set an exact spot; the nearest postcode (Postcodes.io) fills the postcode field and sets the region, and the vet search uses the exact point. Without the key, a built-in UK region map (ONS boundaries, no external requests) is shown instead.
 
 - Create a **browser** key (Google Cloud > APIs & Services > Credentials), enable the **Maps JavaScript API**, and restrict the key by **HTTP referrer** to your site URL (and `localhost:3000/*` for development) and by API to the Maps JavaScript API. The key ships to the browser, so the referrer restriction is what protects it.
 - Optionally set `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` to a map ID from Google Cloud (Map Management); it falls back to `DEMO_MAP_ID`. A map ID is required for the pin and for the map to follow the system light/dark theme.
 - Privacy: the exact point stays in the browser. Only the existing `/api/vets` query receives it; saved scenarios still store just the encrypted postcode. `proxy.ts` allows the Google hosts the Maps JS CSP guide lists.
-- The artifact preview (`npm run preview:html`) never renders the map.
+- The artifact preview (`npm run preview:html`) always uses the built-in region map; Google scripts cannot load there.
 
 ## Credits
 
 Pet silhouettes are from [game-icons.net](https://game-icons.net) by Lorc, Delapouite and contributors, licensed [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). UI icons are [Phosphor](https://github.com/phosphor-icons/core) (MIT). Both reach the app through `npm run art`, which writes `lib/art.ts`.
+
+The built-in UK map (shown without a Google key, and always in the artifact preview) is drawn from ONS Open Geography Portal boundaries (Regions and Countries, December 2025, ultra-generalised), simplified by `node scripts/gen-uk-map.mjs` into `lib/uk-map.ts`. Contains National Statistics and OS data &copy; Crown copyright and database right 2026, under the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).

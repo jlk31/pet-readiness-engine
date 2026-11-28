@@ -61,7 +61,7 @@ export async function proxy(request: NextRequest) {
   h.set('X-Content-Type-Options', 'nosniff');
   h.set('X-Frame-Options', 'DENY');
   h.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  h.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+  h.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self), payment=(), usb=()');
   h.set('Cross-Origin-Opener-Policy', 'same-origin');
   return response;
 }

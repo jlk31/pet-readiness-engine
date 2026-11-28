@@ -77,7 +77,7 @@ The app runs without Supabase (accounts and saving are hidden). To enable them:
 3. In the Supabase dashboard:
    - **Authentication > Providers > Email:** keep "Confirm email" on, and set the minimum password length to 10.
    - **Authentication > URL Configuration:** Site URL = `SITE_URL`, and add `SITE_URL/auth/confirm` to Redirect URLs.
-   - **Authentication > Email Templates > Confirm signup:** link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`.
+   - **Authentication > Email Templates > Confirm signup (optional, paid plan or custom SMTP):** link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`. On the free plan the default template works too: `/auth/confirm` also accepts the PKCE `code` it sends.
    - **Attack Protection:** enable CAPTCHA (Turnstile) with your Turnstile secret key if you set `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, and turn on leaked password protection if your plan has it.
 4. Test the database rules against a local stack: `supabase start && supabase db reset`, then
    `psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/security.sql` (prints PASS).

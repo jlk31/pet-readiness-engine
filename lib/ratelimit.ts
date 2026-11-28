@@ -16,3 +16,19 @@ export async function allowed(sb: Supabase, key: string, max: number, windowSeco
   const { data, error } = await sb.rpc('hit_rate_limit', { p_key: key, p_max: max, p_window_seconds: windowSeconds });
   return !error && data === true;
 }
+
+// ponytail: per-instance memory limiter, only used when Supabase isn't configured; shared limits need the DB
+const windows = new Map<string, { start: number; hits: number }>();
+
+/** Same window rule as hit_rate_limit: a window resets once it is older than windowSeconds. */
+export function memoryAllowed(key: string, max: number, windowSeconds: number, now = Date.now()) {
+  const w = windows.get(key);
+  if (!w || now - w.start > windowSeconds * 1000) {
+    windows.delete(key);
+    if (windows.size >= 10_000) windows.delete(windows.keys().next().value!);
+    windows.set(key, { start: now, hits: 1 });
+    return true;
+  }
+  w.hits++;
+  return w.hits <= max;
+}

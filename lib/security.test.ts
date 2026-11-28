@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { parseScenario, parseCredentials, normalisePostcode, isUuid, parseProductUrl } from './validate.ts';
+import { memoryAllowed } from './ratelimit.ts';
 import { isBlockedIp, safeLookup, safeFetch, BlockedAddress } from './fetch-safe.ts';
 import { encrypt, decrypt } from './crypto.ts';
 
@@ -93,4 +94,14 @@ test('parseProductUrl: https shop links only', () => {
     'https://shop.co.uk:8443/', 'https://shop.co.uk./', 'ftp://shop.co.uk/', 'javascript:alert(1)', 'shop.co.uk', '', null, 42, `https://shop.co.uk/${'a'.repeat(2048)}`]) {
     assert.equal(parseProductUrl(bad).ok, false, String(bad).slice(0, 40));
   }
+});
+
+test('memoryAllowed: 20 hits per window, other keys unaffected, window resets', () => {
+  const key = `test:memory:${randomBytes(4).toString('hex')}`;
+  const t0 = 1_000_000;
+  for (let i = 0; i < 20; i++) assert.equal(memoryAllowed(key, 20, 600, t0), true, `hit ${i + 1}`);
+  assert.equal(memoryAllowed(key, 20, 600, t0), false, '21st refused');
+  assert.equal(memoryAllowed(`${key}:other`, 20, 600, t0), true, 'different key unaffected');
+  assert.equal(memoryAllowed(key, 20, 600, t0 + 600_000), false, 'exactly at the window edge is still the same window');
+  assert.equal(memoryAllowed(key, 20, 600, t0 + 600_001), true, 'allowed again after the window');
 });

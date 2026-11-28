@@ -1,6 +1,6 @@
 import { safeFetch } from '@/lib/fetch-safe';
 import { extractProduct, type Product } from '@/lib/product';
-import { allowed, hash, ipFromHeaders } from '@/lib/ratelimit';
+import { allowed, hash, ipFromHeaders, memoryAllowed } from '@/lib/ratelimit';
 import { createClient } from '@/lib/supabase';
 import { parseProductUrl } from '@/lib/validate';
 
@@ -17,10 +17,10 @@ export async function POST(req: Request) {
   const url = parseProductUrl(input?.url);
   if (!url.ok) return err(url.error, 400);
 
-  // Same limiter as the server actions, and the same stance when Supabase isn't configured: refuse (fail closed).
+  // Same limit as the server actions. Without Supabase, fall back to the per-instance memory limiter.
+  const key = `product:ip:${hash(ipFromHeaders(req.headers))}`;
   const sb = await createClient();
-  if (!sb) return err('Product lookup is not set up on this server yet.', 503);
-  if (!(await allowed(sb, `product:ip:${hash(ipFromHeaders(req.headers))}`, 20, 600))) {
+  if (!(sb ? await allowed(sb, key, 20, 600) : memoryAllowed(key, 20, 600))) {
     return err('Too many lookups. Try again in a few minutes.', 429);
   }
 

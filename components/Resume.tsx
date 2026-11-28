@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ClipboardEvent, type FormEvent } from 'react';
 import { gbp, type Simulation } from '@/lib/engine';
 import {
-  MAX_PRODUCTS, MAX_QTY, forStorage, hostOf, loadItems, money, parsePounds, safeUrl, sanitizeItem, shoppingText, totals, type ShopItem,
+  MAX_PICTURE_BYTES, MAX_PRODUCTS, MAX_QTY, PICTURE_SIDE, fitWithin, forStorage, hostOf, isAllowedImage, loadItems, money, parsePounds, safeUrl, sanitizeItem, shoppingText, totals, type ShopItem,
 } from '@/lib/shopping';
 import type { Lifestyle, SpeciesWithCosts } from '@/lib/types';
 import Icon from './Icon';
@@ -239,7 +239,10 @@ function LinkForm({ onAdd, onFail }: { onAdd: (p: ShopItem | null) => void; onFa
       const res = await fetch('/api/product', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: u }) });
       const body = await res.json().catch(() => null);
       const item = res.ok ? sanitizeItem(body) : null;
-      if (item) { onAdd(item); setUrl(''); setMsg(`Added ${item.title}.`); return; }
+      if (item) {
+        item.image = item.image && await downscale(item.image).catch(() => null); // small enough to always be saved
+        onAdd(item); setUrl(''); setMsg(`Added ${item.title}.`); return;
+      }
       setMsg(res.ok ? "We couldn't read that product. Add the item by hand instead." : body?.error ?? 'Something went wrong. Add the item by hand instead.');
       if (res.ok || [422, 502, 503].includes(res.status)) onFail(u);
     } catch {
@@ -262,10 +265,83 @@ function LinkForm({ onAdd, onFail }: { onAdd: (p: ShopItem | null) => void; onFa
   );
 }
 
+const loadImage = (src: string) => new Promise<HTMLImageElement>((ok, no) => {
+  const i = new Image();
+  i.onload = () => (i.naturalWidth ? ok(i) : no(new Error('empty')));
+  i.onerror = () => no(new Error('decode'));
+  i.src = src;
+});
+
+/** Decodes a data: URI (rejects if it is not a real image) and re-encodes it at most PICTURE_SIDE px: webp, or jpeg where toDataURL has no webp. */
+async function downscale(src: string): Promise<string> {
+  const img = await loadImage(src);
+  const [w, h] = fitWithin(img.naturalWidth, img.naturalHeight, PICTURE_SIDE);
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const g = c.getContext('2d')!;
+  g.drawImage(img, 0, 0, w, h);
+  const webp = c.toDataURL('image/webp', 0.82);
+  if (webp.startsWith('data:image/webp')) return webp;
+  g.globalCompositeOperation = 'destination-over'; // jpeg has no transparency: put the picture on white
+  g.fillStyle = '#fff';
+  g.fillRect(0, 0, w, h);
+  return c.toDataURL('image/jpeg', 0.82);
+}
+
+/** Optional picture for a product. Local only: the file is validated, decoded and shrunk in the browser, never sent anywhere. */
+function PictureField({ id, image, onChange }: { id: string; image: string | null; onChange: (v: string | null) => void }) {
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function take(f: File | undefined) {
+    if (!f) return;
+    setErr('');
+    if (!isAllowedImage(f.type, f.size)) {
+      return setErr(f.size > MAX_PICTURE_BYTES ? 'That picture is over 8 MB. Choose a smaller one.' : 'Choose a PNG, JPEG, WebP, GIF or AVIF picture. SVG files are not accepted.');
+    }
+    setBusy(true);
+    try {
+      const url = await new Promise<string>((ok, no) => {
+        const r = new FileReader();
+        r.onload = () => ok(String(r.result));
+        r.onerror = () => no(r.error);
+        r.readAsDataURL(f);
+      });
+      onChange(await downscale(url));
+    } catch {
+      setErr("That file couldn't be read as a picture. Choose a different one.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  const paste = (e: ClipboardEvent) => {
+    const f = [...e.clipboardData.files].find((x) => x.type.startsWith('image/'));
+    if (f) { e.preventDefault(); take(f); }
+  };
+
+  return (
+    <div onPaste={paste} className="flex flex-col gap-1">
+      <label htmlFor={id} className="text-sm font-semibold">Picture (optional)</label>
+      {image && (
+        <div className="flex items-center gap-3">
+          <img src={image} alt="Chosen picture" className="size-16 shrink-0 rounded-control border border-line object-cover" />
+          <button type="button" onClick={() => onChange(null)} className="text-sm font-bold text-accent underline-offset-4 hover:underline">Remove picture</button>
+        </div>
+      )}
+      <input id={id} type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" aria-busy={busy}
+        onChange={(e) => { take(e.target.files?.[0]); e.target.value = ''; }} className="min-w-0 text-sm" />
+      <p className="text-xs text-muted">Or click here and paste an image (Ctrl+V or ⌘V). It stays on this device.</p>
+      <p role="status" className="text-sm text-bad empty:hidden">{err}</p>
+    </div>
+  );
+}
+
 function ManualForm({ url, onAdd, onCancel }: { url: string; onAdd: (p: ShopItem) => void; onCancel: () => void }) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [link, setLink] = useState(url);
+  const [image, setImage] = useState<string | null>(null);
   const [err, setErr] = useState('');
 
   function submit(e: FormEvent) {
@@ -274,7 +350,7 @@ function ManualForm({ url, onAdd, onCancel }: { url: string; onAdd: (p: ShopItem
     if (!name.trim()) return setErr('Enter a name for the item.');
     if (pence === null) return setErr(PRICE_HINT);
     if (link.trim() && !safeUrl(link)) return setErr('The link must start with http:// or https://.');
-    const item = sanitizeItem({ title: name, pricePence: pence, url: link, qty: 1 });
+    const item = sanitizeItem({ title: name, pricePence: pence, url: link, image, qty: 1 });
     if (item) onAdd(item);
   }
 
@@ -292,6 +368,7 @@ function ManualForm({ url, onAdd, onCancel }: { url: string; onAdd: (p: ShopItem
       <label className="flex flex-col gap-1 text-sm font-semibold">Link to the shop (optional)
         <input type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://" className="field font-normal" />
       </label>
+      <PictureField id="pic-new" image={image} onChange={setImage} />
       <p role="status" className="text-sm text-bad empty:hidden">{err}</p>
       <div className="flex gap-2">
         <button type="submit" className="btn">Add item</button>
@@ -305,6 +382,7 @@ function ProductRow({ it, kind, set, remove }: { it: ShopItem; kind: string; set
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
+  const [pic, setPic] = useState<string | null>(null);
   const [err, setErr] = useState('');
   const link = safeUrl(it.url);
   const meta = [it.brand, link && hostOf(link)].filter(Boolean).join(' · ');
@@ -313,6 +391,7 @@ function ProductRow({ it, kind, set, remove }: { it: ShopItem; kind: string; set
   function startEdit() {
     setTitle(it.title);
     setPrice(it.pricePence === null ? '' : (it.pricePence / 100).toFixed(2));
+    setPic(it.image);
     setErr('');
     setEditing(true);
   }
@@ -321,7 +400,7 @@ function ProductRow({ it, kind, set, remove }: { it: ShopItem; kind: string; set
     const pence = price.trim() === '' ? null : parsePounds(price);
     if (!title.trim()) return setErr('Enter a name for the item.');
     if (pence === null && price.trim() !== '') return setErr(PRICE_HINT);
-    set({ title: title.trim().slice(0, 120), pricePence: pence });
+    set({ title: title.trim().slice(0, 120), pricePence: pence, image: pic });
     setEditing(false);
   }
   function setPriceOnly(e: FormEvent) {
@@ -350,6 +429,7 @@ function ProductRow({ it, kind, set, remove }: { it: ShopItem; kind: string; set
           <label className="flex flex-col gap-1 text-sm font-semibold">Price in £
             <input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" className="field font-normal sm:w-40" />
           </label>
+          <PictureField id={`pic-${it.id}`} image={pic} onChange={setPic} />
           <p role="status" className="text-sm text-bad empty:hidden">{err}</p>
           <div className="flex gap-2">
             <button type="submit" className="btn">Save changes</button>

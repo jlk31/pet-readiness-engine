@@ -101,7 +101,7 @@ The app runs without Supabase (accounts and saving are hidden). To enable them:
 | Parameterised queries | All DB access goes through supabase-js/PostgREST (parameterised). The only SQL function uses bound parameters and an empty `search_path`. |
 | Validate all input | `lib/validate.ts` on every server action, length/type checks in the DB, UK bounding box on `/api/vets`. |
 | Escape user content | React escapes all output; there is no `dangerouslySetInnerHTML`. Website links from OpenStreetMap are limited to `http(s)`. |
-| Restrict file uploads | The app has no uploads and no storage buckets. Add size/type checks and bucket policies if uploads are ever added. |
+| Restrict file uploads | Nothing is uploaded to the server and there are no storage buckets. Product pictures are chosen (or pasted) locally, checked by type (PNG, JPEG, WebP, GIF, AVIF; no SVG), size (8 MB) and by actually decoding them, then downscaled to 192px in the browser and kept in the browser only. Add server-side checks and bucket policies if uploads are ever added. |
 | Trim API responses | Pages select only the columns they show. `/api/vets` returns only displayed fields. Error messages are generic. |
 | Security headers | Nonce-based CSP with `strict-dynamic`, HSTS, nosniff, `frame-ancestors 'none'`/X-Frame-Options, Referrer-Policy, Permissions-Policy, COOP. `X-Powered-By` is removed. |
 | Force HTTPS | 308 redirect in `proxy.ts`, HSTS (preload-ready) and `upgrade-insecure-requests`. |

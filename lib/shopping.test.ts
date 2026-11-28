@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { forStorage, loadItems, money, parsePounds, safeUrl, sanitizeItem, shoppingText, totals, type ShopItem } from './shopping.ts';
+import { fitWithin, forStorage, isAllowedImage, loadItems, money, parsePounds, safeUrl, sanitizeItem, shoppingText, totals, type ShopItem } from './shopping.ts';
 
 test('parsePounds', () => {
   const ok: [string, number][] = [['12', 1200], ['12.5', 1250], ['12.50', 1250], ['£12.99', 1299], ['1,299.00', 129900], ['0.07', 7], [' 5 ', 500], ['100000', 10_000_000]];
@@ -46,4 +46,23 @@ test('storage: junk is ignored, capped at 50, big images dropped', () => {
   const saved = JSON.parse(forStorage([item({ image: small }), item({ id: 'b', image: big })]));
   assert.deepEqual(saved.map((s: ShopItem) => s.image), [small, null]);
   assert.equal(JSON.parse(forStorage([item({ image: small })], false))[0].image, null);
+});
+
+test('isAllowedImage: type allowlist and 8 MB cap', () => {
+  assert.equal(isAllowedImage('image/png', 1000), true);
+  for (const t of ['image/jpeg', 'image/webp', 'image/gif', 'image/avif']) assert.equal(isAllowedImage(t, 1), true, t);
+  assert.equal(isAllowedImage('image/svg+xml', 1000), false);
+  assert.equal(isAllowedImage('text/plain', 1000), false);
+  assert.equal(isAllowedImage('', 1000), false);
+  assert.equal(isAllowedImage('image/png', 8 * 1024 * 1024), true);
+  assert.equal(isAllowedImage('image/png', 9 * 1024 * 1024), false);
+  assert.equal(isAllowedImage('image/png', 0), false);
+});
+
+test('fitWithin: scales the long side down, never up', () => {
+  assert.deepEqual(fitWithin(1000, 500, 192), [192, 96]);
+  assert.deepEqual(fitWithin(500, 1000, 192), [96, 192]);
+  assert.deepEqual(fitWithin(100, 50, 192), [100, 50]);
+  assert.deepEqual(fitWithin(192, 192, 192), [192, 192]);
+  assert.deepEqual(fitWithin(5000, 10, 192), [192, 1]);
 });

@@ -40,12 +40,12 @@ export default function Resume({ sp, sim, life, region, onClose }: {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 py-8 pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))]">
-      <div className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-5 print:hidden">
+      <div className="flex flex-col gap-4 rounded-[2rem] border border-line bg-surface p-5 print:hidden">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <button type="button" onClick={onClose} className="text-sm font-semibold text-accent">← Back to comparison</button>
+          <button type="button" onClick={onClose} className="text-sm font-bold text-accent underline-offset-4 hover:underline">← Back to comparison</button>
           <div className="flex gap-2">
-            <button type="button" onClick={copy} className="rounded-md border border-line px-3 py-2 text-sm font-semibold">Copy as text</button>
-            {CAN_PRINT && <button type="button" onClick={() => window.print()} className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-accent-fg">Print / Save as PDF</button>}
+            <button type="button" onClick={copy} className="btn-ghost">Copy as text</button>
+            {CAN_PRINT && <button type="button" onClick={() => window.print()} className="btn">Print / Save as PDF</button>}
           </div>
         </div>
         {copied && <p className="text-sm text-muted" role="status">{copied}</p>}
@@ -54,19 +54,19 @@ export default function Resume({ sp, sim, life, region, onClose }: {
         ))}
         <div className="grid gap-3 sm:grid-cols-2">
           <label htmlFor="owner" className="flex flex-col gap-1 text-sm font-semibold">Your name
-            <input id="owner" value={owner} onChange={(e) => setOwner(e.target.value)} className="rounded-md border border-line bg-bg px-3 py-2 font-normal" />
+            <input id="owner" value={owner} onChange={(e) => setOwner(e.target.value)} className="field font-normal" />
           </label>
           <label htmlFor="pet-name" className="flex flex-col gap-1 text-sm font-semibold">Pet's name (if you know it)
-            <input id="pet-name" value={petName} onChange={(e) => setPetName(e.target.value)} className="rounded-md border border-line bg-bg px-3 py-2 font-normal" />
+            <input id="pet-name" value={petName} onChange={(e) => setPetName(e.target.value)} className="field font-normal" />
           </label>
         </div>
       </div>
 
-      <div ref={doc} className="flex flex-col gap-8 rounded-xl border border-line bg-surface p-6 print:border-0 print:p-0">
+      <div ref={doc} className="flex flex-col gap-8 rounded-[2rem] border border-line bg-surface p-6 print:border-0 print:p-0">
         <article className="flex flex-col gap-5">
           <header className="flex flex-col gap-1 border-b border-line pb-4">
-            <p className="font-mono text-xs uppercase tracking-widest text-accent">Landlord Pet Resume</p>
-            <h1 className="font-display text-3xl font-extrabold">{petName.trim() || sp.name}</h1>
+            <p className="text-xs font-bold uppercase tracking-widest text-accent">Landlord Pet Resume</p>
+            <h1 className="font-display text-[clamp(2.25rem,7vw,4rem)] font-black leading-none tracking-tighter">{petName.trim() || sp.name}</h1>
             <p className="text-sm text-muted">
               {petName.trim() ? `${sp.name}. ` : ''}Prepared by {owner.trim() || '[your name]'} on {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.
             </p>

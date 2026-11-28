@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
-/* Layout: form rail left, comparison ledger right; stacks on phones. */
+/* Warm paper and ink, one vermillion accent. Bento results; form rail left, stacks on phones. */
 :root {
-  --bg: #f2f6f4; --surface: #ffffff; --fg: #12201c; --muted: #56675f; --line: #d6e0dc;
-  --accent: #0e6b5c; --accent-fg: #ffffff;
-  --s1: #0e6b5c; --s2: #b4640a; --s3: #6a4fc2;
-  --good: #1f7a3a; --warn: #9a5a00; --bad: #b42318;
+  --bg: #f3ecdf; --surface: #fbf7ef; --fg: #1b1713; --muted: #5c5247; --line: #d8cbb6;
+  --accent: #bf2f16; --accent-fg: #ffffff;
+  --s1: #bf2f16; --s2: #1f6b4a; --s3: #a06a00;
+  --good: #1e6b3a; --warn: #8a5200; --bad: #b42318;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0c1412; --surface: #13211d; --fg: #e3ede9; --muted: #93a69f; --line: #25372f;
-    --accent: #4fc1a6; --accent-fg: #06201a;
-    --s1: #4fc1a6; --s2: #f0a543; --s3: #a893f0;
-    --good: #5fcb7e; --warn: #f0b34a; --bad: #f27a6e; color-scheme: dark;
+    --bg: #171310; --surface: #221c17; --fg: #f1e8da; --muted: #b3a593; --line: #3b3128;
+    --accent: #ff6a4d; --accent-fg: #1a0f0b;
+    --s1: #ff6a4d; --s2: #6fcf97; --s3: #f0b429;
+    --good: #6fcf97; --warn: #f0b429; --bad: #ff8a7a; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0c1412; --surface: #13211d; --fg: #e3ede9; --muted: #93a69f; --line: #25372f;
-  --accent: #4fc1a6; --accent-fg: #06201a;
-  --s1: #4fc1a6; --s2: #f0a543; --s3: #a893f0;
-  --good: #5fcb7e; --warn: #f0b34a; --bad: #f27a6e; color-scheme: dark;
+  --bg: #171310; --surface: #221c17; --fg: #f1e8da; --muted: #b3a593; --line: #3b3128;
+  --accent: #ff6a4d; --accent-fg: #1a0f0b;
+  --s1: #ff6a4d; --s2: #6fcf97; --s3: #f0b429;
+  --good: #6fcf97; --warn: #f0b429; --bad: #ff8a7a; color-scheme: dark;
 }
 
 @theme inline {
@@ -38,5 +38,18 @@ input[type="range"], input[type="checkbox"], input[type="radio"] { accent-color:
 
 /* Print in light colours whatever the screen theme. */
 @media print {
-  :root:root:root { --bg: #fff; --surface: #fff; --fg: #000; --muted: #444; --line: #ccc; --accent: #0e6b5c; --good: #1f7a3a; color-scheme: light; }
+  :root:root:root { --bg: #fff; --surface: #fff; --fg: #000; --muted: #444; --line: #ccc; --accent: #bf2f16; --good: #1e6b3a; color-scheme: light; }
+}
+
+.field { border: 1.5px solid var(--line); background: var(--bg); border-radius: .75rem; padding: .55rem .8rem; font-size: .875rem; }
+.btn, .btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border-radius: 999px; padding: .6rem 1.1rem;
+  font-size: .875rem; font-weight: 700; transition: transform .2s, background-color .2s, color .2s; }
+.btn { background: var(--accent); color: var(--accent-fg); }
+.btn-ghost { border: 1.5px solid var(--fg); }
+.btn-ghost:hover { background: var(--fg); color: var(--bg); }
+.btn:disabled, .btn-ghost:disabled { opacity: .6; }
+@media (prefers-reduced-motion: no-preference) {
+  .btn:hover, .btn-ghost:hover { transform: translateY(-2px); }
+  .float { animation: float 7s ease-in-out infinite; }
+  @keyframes float { 50% { translate: 0 -10px; } }
 }

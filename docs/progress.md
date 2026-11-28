@@ -8,12 +8,14 @@
 - Phase 5: side-by-side table, landlord resume and shopping checklist (print / copy).
 - Accounts: Supabase sign-in, saved scenarios, security hardening (RLS, grants, encryption, rate limits, CSP, CI scans).
 - Omega orchestration setup (CLAUDE.md, docs, agents, reflect skill, compaction at 40%).
+- Redesign: Satoshi everywhere, Fluent Emoji + Phosphor art (MIT), editorial hero, illustrated species tiles, bento results, warm paper/vermillion palette (light + dark).
 
 ## Next
-- Visual redesign: Satoshi font everywhere, open-source pet artwork, gallery-grade layout.
+- Screenshot and tune the Resume print layout after the redesign.
 - Connect a real Supabase project and test sign-in end to end.
 - Parks near the postcode for dogs; more species in seed.json.
 
 ## Log
 - 2026-11-27: Phases 1–5 built and pushed.
 - 2026-11-28: Supabase accounts + security hardening. Omega setup added.
+- 2026-11-28: Redesign via orchestrated workers (2 Haiku builders, Sonnet engineer, Sonnet reviewer); every check rerun by the orchestrator.

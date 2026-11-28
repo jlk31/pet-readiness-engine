@@ -17,24 +17,24 @@ export default function LoginForm({ configured, siteKey, nonce, confirmFailed }:
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 py-12 pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))]">
-      <a href="/" className="text-sm font-semibold text-accent">← Back to the simulator</a>
+      <a href="/" className="text-sm font-bold text-accent underline-offset-4 hover:underline">← Back to the simulator</a>
       <div className="flex flex-col gap-1">
-        <h1 className="font-display text-3xl font-extrabold">Sign in</h1>
+        <h1 className="font-display text-[clamp(2.25rem,7vw,4rem)] font-black leading-none tracking-tighter">Sign in</h1>
         <p className="text-muted">Save scenarios and come back to them later.</p>
       </div>
       {!configured ? (
-        <p className="rounded-xl border border-line bg-surface p-5 text-sm text-warn">
+        <p className="rounded-[2rem] border border-line bg-surface p-5 text-sm text-warn">
           Accounts are not set up on this server yet. Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (see README).
         </p>
       ) : (
-        <form className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-5">
+        <form className="flex flex-col gap-4 rounded-[2rem] border border-line bg-surface p-5">
           <label htmlFor="email" className="flex flex-col gap-1 text-sm font-semibold">Email
             <input id="email" name="email" type="email" required maxLength={254} autoComplete="email"
-              className="rounded-md border border-line bg-bg px-3 py-2 font-normal" />
+              className="field font-normal" />
           </label>
           <label htmlFor="password" className="flex flex-col gap-1 text-sm font-semibold">Password
             <input id="password" name="password" type="password" required minLength={10} maxLength={72} autoComplete="current-password"
-              className="rounded-md border border-line bg-bg px-3 py-2 font-normal" />
+              className="field font-normal" />
             <span className="font-normal text-muted">At least 10 characters.</span>
           </label>
           {siteKey && (
@@ -47,10 +47,10 @@ export default function LoginForm({ configured, siteKey, nonce, confirmFailed }:
           {state.error && <p className="text-sm text-bad" role="alert">{state.error}</p>}
           {state.message && <p className="text-sm text-good" role="status">{state.message}</p>}
           <div className="flex flex-wrap gap-2">
-            <button formAction={signInAction} disabled={signingIn || signingUp} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-fg disabled:opacity-60">
+            <button formAction={signInAction} disabled={signingIn || signingUp} className="btn">
               {signingIn ? 'Signing in…' : 'Sign in'}
             </button>
-            <button formAction={signUpAction} disabled={signingIn || signingUp} className="rounded-md border border-line px-4 py-2 text-sm font-semibold disabled:opacity-60">
+            <button formAction={signUpAction} disabled={signingIn || signingUp} className="btn-ghost">
               {signingUp ? 'Creating account…' : 'Create account'}
             </button>
           </div>

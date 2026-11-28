@@ -2,15 +2,19 @@
 
 import { useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { SPECIES_ART } from '@/lib/art';
 import { MULTIPLIERS, SPECIES } from '@/lib/data';
 import { DEFAULT_ASSUMPTIONS, gbp, multipliersFor, simulate, type Assumptions, type Issue, type Simulation } from '@/lib/engine';
 import { lookupPostcode, UK_REGIONS, type Vet } from '@/lib/location';
 import type { Lifestyle, SpeciesWithCosts, WhatIfs } from '@/lib/types';
 import type { ScenarioInput } from '@/lib/validate';
+import Icon from './Icon';
 import Resume from './Resume';
 
 const SERIES = ['var(--s1)', 'var(--s2)', 'var(--s3)'];
 const FREQ = { one_off: 'one-off', monthly: '/month', annual: '/year', per_night: '/night', emergency: 'if needed' } as const;
+const CELL = 'rounded-[2rem] border border-line bg-surface p-5 sm:p-6';
+const H2 = 'flex items-center gap-2 font-display text-2xl font-black tracking-tight';
 const SEVERITY: Record<Issue['severity'], string> = { blocker: 'text-bad', warning: 'text-warn', info: 'text-muted' };
 
 // Example starting point, labelled as such in the UI.
@@ -91,41 +95,56 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
   if (resume) return <Resume sp={resume.sp} sim={resume.sim} life={life} region={region} onClose={() => setResumeFor(null)} />;
 
   return (
-    <div className="mx-auto max-w-7xl py-8 pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))]">
-      <header className="mb-8 flex flex-col gap-2">
+    <div className="overflow-x-clip">
+    <div className="mx-auto max-w-7xl py-6 pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))]">
+      <header className="mb-10 flex flex-col gap-8 lg:mb-14">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="font-mono text-xs uppercase tracking-widest text-accent">pawprint-ledger</p>
+          <p className="flex items-center gap-2 font-display text-lg font-black tracking-tight"><Icon name="paw-print" className="size-6 text-accent" />pawprint-ledger</p>
           {account && (
-            <nav className="flex items-center gap-4 text-sm">
+            <nav className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
               {account.email ? (
                 <>
                   <span className="text-muted">{account.email}</span>
-                  <a href="/scenarios" className="font-semibold text-accent">My scenarios</a>
+                  <a href="/scenarios" className="font-bold text-accent underline-offset-4 hover:underline">My scenarios</a>
                   {onSignOut && <form action={onSignOut}><button className="text-muted hover:text-fg">Sign out</button></form>}
                 </>
               ) : (
-                <a href="/login" className="font-semibold text-accent">Sign in to save scenarios</a>
+                <a href="/login" className="font-bold text-accent underline-offset-4 hover:underline">Sign in to save scenarios</a>
               )}
             </nav>
           )}
         </div>
-        <h1 className="font-display text-3xl font-extrabold sm:text-4xl">What will this pet really cost you?</h1>
-        <p className="max-w-[65ch] text-muted">
-          UK prices adjusted for your region, extra costs added where your routine leaves gaps, and the full lifetime bill.
-          {initial ? `Showing your saved scenario "${initial.name}".` : 'Starts with an example: renting a flat in London, out 9 hours a day.'}
-        </p>
+        <div className="grid items-end gap-10 lg:grid-cols-[1.5fr_1fr]">
+          <div className="flex min-w-0 flex-col gap-6">
+            <h1 className="font-display text-[clamp(2.75rem,8.5vw,7rem)] font-black leading-[0.92] tracking-tighter">
+              Know what a pet <span className="text-accent">really costs</span> before you commit.
+            </h1>
+            <p className="max-w-[48ch] text-lg text-muted">
+              UK prices adjusted for your region, extra costs added where your routine leaves gaps, and the full lifetime bill.
+              {initial ? ` Showing your saved scenario "${initial.name}".` : ' Starts with an example: renting a flat in London, out 9 hours a day.'}
+            </p>
+          </div>
+          <div aria-hidden className="grid grid-cols-3 gap-3 lg:gap-4">
+            {SPECIES.slice(0, 3).map((s, i) => (
+              <div key={s.id} className={`float aspect-[3/4] rounded-[1.75rem] p-2 ${['-rotate-6', 'mt-8 rotate-3', '-mt-2 -rotate-2'][i]}`}
+                style={{ background: `color-mix(in srgb, ${SERIES[i]} 22%, var(--surface))`, animationDelay: `${i * -2}s` }}>
+                <img src={SPECIES_ART[s.kind]} alt="" className="size-full object-contain" />
+              </div>
+            ))}
+          </div>
+        </div>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[20rem_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[21rem_1fr]">
         {/* Inputs */}
-        <aside className="flex flex-col gap-6 self-start rounded-xl border border-line bg-surface p-5 lg:sticky lg:top-4">
+        <aside className="flex flex-col gap-6 self-start rounded-[2rem] border border-line bg-surface p-5 sm:p-6 lg:sticky lg:top-4">
           {onSave && (
             <form onSubmit={onSaveClick} className="flex flex-col gap-2 border-b border-line pb-5">
-              <label htmlFor="scenario-name" className="text-sm font-semibold">Save this scenario</label>
+              <label htmlFor="scenario-name" className="text-sm font-bold">Save this scenario</label>
               <div className="flex gap-2">
                 <input id="scenario-name" value={scenarioName} onChange={(e) => setScenarioName(e.target.value)} maxLength={80} required
-                  placeholder="e.g. Flat in Camden" className="min-w-0 flex-1 rounded-md border border-line bg-bg px-3 py-2 text-sm" />
-                <button disabled={saveState.saving} className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-accent-fg disabled:opacity-60">
+                  placeholder="e.g. Flat in Camden" className="min-w-0 flex-1 field" />
+                <button disabled={saveState.saving} className="btn">
                   {saveState.saving ? 'Saving…' : 'Save'}
                 </button>
               </div>
@@ -137,24 +156,25 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
             <label htmlFor="postcode" className="text-sm font-semibold">Postcode</label>
             <div className="flex gap-2">
               <input id="postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} autoComplete="postal-code"
-                className="min-w-0 flex-1 rounded-md border border-line bg-bg px-3 py-2 font-mono uppercase" />
-              <button className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-accent-fg">Look up</button>
+                className="min-w-0 flex-1 field font-mono uppercase" />
+              <button className="btn">Look up</button>
             </div>
             {place && <p className="text-sm text-good">{place}</p>}
             {lookupError && <p className="text-sm text-warn">{lookupError}</p>}
             <label htmlFor="region" className="sr-only">Region</label>
             <select id="region" value={region} onChange={(e) => { setRegion(e.target.value); setPlace(null); setVets(null); }}
-              className="rounded-md border border-line bg-bg px-3 py-2 text-sm">
+              className="field">
               {UK_REGIONS.map((r) => <option key={r}>{r}</option>)}
             </select>
           </form>
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-2 text-sm font-semibold">Your home</legend>
-            <div className="flex gap-4">
+            <legend className="mb-2 text-xs font-bold uppercase tracking-widest text-muted">Your home</legend>
+            <div className="grid grid-cols-2 gap-2">
               {(['flat', 'house'] as const).map((h) => (
-                <label key={h} className="flex items-center gap-2 text-sm capitalize">
-                  <input type="radio" id={`housing-${h}`} name="housing" checked={life.housing === h} onChange={() => set('housing', h)} /> {h}
+                <label key={h} className="relative flex cursor-pointer items-center justify-center gap-2 rounded-xl border-[1.5px] border-line px-3 py-2 text-sm font-bold capitalize has-[:checked]:border-fg has-[:checked]:bg-fg has-[:checked]:text-bg has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
+                  <input type="radio" id={`housing-${h}`} name="housing" checked={life.housing === h} onChange={() => set('housing', h)} className="sr-only" />
+                  <Icon name="house" className="size-4" />{h}
                 </label>
               ))}
             </div>
@@ -171,16 +191,25 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
             onChange={(v) => set('holiday_nights_per_year', v)} />
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-2 text-sm font-semibold">Compare (up to 3)</legend>
-            {SPECIES.map((s) => (
-              <Check key={s.id} id={`pick-${s.id}`} label={s.name} checked={picked.includes(s.id)}
-                disabled={!picked.includes(s.id) && picked.length >= 3}
-                onChange={(v) => setPicked((p) => (v ? [...p, s.id] : p.filter((x) => x !== s.id)))} />
-            ))}
+            <legend className="mb-2 text-xs font-bold uppercase tracking-widest text-muted">Compare (up to 3)</legend>
+            {SPECIES.map((s) => {
+              const on = picked.includes(s.id);
+              const disabled = !on && picked.length >= 3;
+              return (
+                <label key={s.id} htmlFor={`pick-${s.id}`}
+                  className={`flex cursor-pointer items-center gap-3 rounded-2xl border-[1.5px] border-line p-2 pr-3 text-sm font-bold has-[:checked]:border-fg has-[:checked]:bg-bg has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent motion-safe:transition motion-safe:hover:-translate-y-0.5 ${disabled ? 'opacity-50' : ''}`}>
+                  <input type="checkbox" id={`pick-${s.id}`} className="sr-only" checked={on} disabled={disabled}
+                    onChange={(e) => setPicked((p) => (e.target.checked ? [...p, s.id] : p.filter((x) => x !== s.id)))} />
+                  <img src={SPECIES_ART[s.kind]} alt="" className="size-12 shrink-0 rounded-xl bg-line/50 p-1" />
+                  <span className="flex-1">{s.name}</span>
+                  <span aria-hidden className={`grid size-5 place-items-center rounded-full border-[1.5px] text-xs ${on ? 'border-accent bg-accent text-accent-fg' : 'border-muted'}`}>{on ? '✓' : ''}</span>
+                </label>
+              );
+            })}
           </fieldset>
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-2 text-sm font-semibold">Stress test</legend>
+            <legend className="mb-2 text-xs font-bold uppercase tracking-widest text-muted">Stress test</legend>
             <Check id="emergency" label="Emergency vet bill" checked={!!whatIfs.emergency}
               onChange={(v) => setWhatIfs((w) => ({ ...w, emergency: v }))} />
             {whatIfs.emergency && (
@@ -194,13 +223,13 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
           </fieldset>
 
           <fieldset className="flex flex-col gap-3">
-            <legend className="mb-2 text-sm font-semibold">Assumptions</legend>
+            <legend className="mb-2 text-xs font-bold uppercase tracking-widest text-muted">Assumptions</legend>
             <Range id="start-age" label="Pet's age when you get them" value={assume.startAge} min={0} max={10} suffix=" yrs"
               onChange={(v) => setAssume((a) => ({ ...a, startAge: v }))} />
             <div className="flex flex-col gap-1">
               <label htmlFor="horizon" className="text-sm font-semibold">Project over</label>
               <select id="horizon" value={assume.years ?? ''} onChange={(e) => setAssume((a) => ({ ...a, years: e.target.value ? Number(e.target.value) : undefined }))}
-                className="rounded-md border border-line bg-bg px-3 py-2 text-sm">
+                className="field">
                 <option value="">Each pet's remaining lifespan</option>
                 <option value="10">10 years</option>
                 <option value="15">15 years</option>
@@ -212,33 +241,32 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
         </aside>
 
         {/* Results */}
-        <main className="flex min-w-0 flex-col gap-8">
+        <main className="flex min-w-0 flex-col gap-4">
           {results.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-line p-8 text-center text-muted">Pick at least one pet to compare.</p>
+            <p className="rounded-[2rem] border border-dashed border-line p-8 text-center text-muted">Pick at least one pet to compare.</p>
           ) : (
             <>
-              <section className="grid gap-4 md:grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]">
+              <section className="grid gap-4 md:grid-cols-[repeat(auto-fit,minmax(17rem,1fr))]">
                 {results.map(({ sp, sim }, i) => (
-                  <PetCard key={sp.id} name={sp.name} sim={sim} color={SERIES[i]} emergencyOn={!!whatIfs.emergency}
+                  <PetCard key={sp.id} name={sp.name} kind={sp.kind} sim={sim} color={SERIES[i]} emergencyOn={!!whatIfs.emergency}
                     onResume={() => { setResumeFor(sp.id); scrollTo(0, 0); }} />
                 ))}
               </section>
 
-              {results.length > 1 && <Comparison results={results} />}
-
-              <section className="rounded-xl border border-line bg-surface p-5">
+              <div className="grid gap-4 lg:grid-cols-6">
+              <section className={`${CELL} lg:col-span-6`}>
                 <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 max-w-[65ch]">
-                    <h2 className="font-display text-xl font-semibold">Lifetime cost, year by year</h2>
+                    <h2 className={H2}><Icon name="chart-line-up" className="size-6 text-accent" />Lifetime cost, year by year</h2>
                     <p className="text-sm text-muted">
                       {perYear ? 'What each year costs.' : 'Running total from the year you get them.'} Other prices rise {assume.generalInflation * 100}% a year,
                       vet and insurance {Math.round(assume.medicalInflation * 100)}%. Insurance and check-ups cost more once a pet is a senior.
                     </p>
                   </div>
-                  <div role="group" aria-label="Chart view" className="flex rounded-md border border-line p-0.5 text-sm">
+                  <div role="group" aria-label="Chart view" className="flex rounded-full border-[1.5px] border-line p-0.5 text-sm">
                     {[['Running total', false], ['Per year', true]].map(([label, v]) => (
                       <button key={String(label)} type="button" aria-pressed={perYear === v} onClick={() => setPerYear(v as boolean)}
-                        className={`rounded px-3 py-1 ${perYear === v ? 'bg-accent font-semibold text-accent-fg' : 'text-muted'}`}>{label}</button>
+                        className={`rounded-full px-4 py-1.5 font-bold ${perYear === v ? 'bg-accent text-accent-fg' : 'text-muted hover:text-fg'}`}>{label}</button>
                     ))}
                   </div>
                 </div>
@@ -249,26 +277,27 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
                       <XAxis dataKey="year" tick={{ fill: 'var(--muted)', fontSize: 12 }} stroke="var(--line)" label={{ value: 'Year', position: 'insideBottomRight', offset: -2, fill: 'var(--muted)', fontSize: 12 }} />
                       <YAxis tickFormatter={(v: number) => `£${(v / 100000).toLocaleString('en-GB', { maximumFractionDigits: 1 })}k`} tick={{ fill: 'var(--muted)', fontSize: 12 }} stroke="var(--line)" width={48} />
                       <Tooltip formatter={(v) => gbp(Number(v))} labelFormatter={(y) => `Year ${y}`}
-                        contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--fg)', borderRadius: 8 }} />
+                        contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--fg)', borderRadius: 12 }} />
                       {whatIfs.emergency && (
                         <ReferenceLine x={Math.min(whatIfs.emergency_year ?? 1, maxYears)} stroke="var(--bad)" strokeDasharray="4 3"
                           label={{ value: 'Emergency', position: 'insideTopLeft', fill: 'var(--bad)', fontSize: 12 }} />
                       )}
                       {results.map(({ sp }, i) => (
-                        <Line key={sp.id} dataKey={sp.id} name={sp.name} stroke={SERIES[i]} strokeWidth={2.5} dot={false} connectNulls={false} />
+                        <Line key={sp.id} dataKey={sp.id} name={sp.name} stroke={SERIES[i]} strokeWidth={3} dot={false} connectNulls={false} />
                       ))}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
               </section>
 
-              {vets && <VetList vets={vets} postcode={postcode} exotic={results.filter((r) => ['reptile', 'bird'].includes(r.sp.kind)).map((r) => r.sp.name)} />}
+              {results.length > 1 && <Comparison results={results} className={vets ? 'lg:col-span-4' : 'lg:col-span-6'} />}
+              {vets && <VetList vets={vets} postcode={postcode} className={results.length > 1 ? 'lg:col-span-2' : 'lg:col-span-6'} exotic={results.filter((r) => ['reptile', 'bird'].includes(r.sp.kind)).map((r) => r.sp.name)} />}
 
-              <section className="flex flex-col gap-3">
-                <h2 className="font-display text-xl font-semibold">Cost breakdown</h2>
+              <section className={`${CELL} flex flex-col gap-3 lg:col-span-6`}>
+                <h2 className={H2}><Icon name="wallet" className="size-6 text-accent" />Cost breakdown</h2>
                 {results.map(({ sp, sim }) => (
-                  <details key={sp.id} className="rounded-xl border border-line bg-surface">
-                    <summary className="cursor-pointer px-5 py-3 font-semibold">{sp.name}</summary>
+                  <details key={sp.id} className="rounded-2xl border border-line bg-bg">
+                    <summary className="cursor-pointer px-5 py-3 font-bold">{sp.name}</summary>
                     <div className="overflow-x-auto px-5 pb-4">
                       <table className="w-full text-sm tabular-nums">
                         <tbody>
@@ -293,29 +322,39 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
                   </details>
                 ))}
               </section>
+              </div>
             </>
           )}
         </main>
       </div>
     </div>
+    </div>
   );
 }
 
-function PetCard({ name, sim, color, emergencyOn, onResume }: { name: string; sim: Simulation; color: string; emergencyOn: boolean; onResume: () => void }) {
+function PetCard({ name, kind, sim, color, emergencyOn, onResume }: { name: string; kind: string; sim: Simulation; color: string; emergencyOn: boolean; onResume: () => void }) {
   const { score, issues } = sim.readiness;
   const band = score >= 80 ? ['Good fit', 'text-good'] : score >= 50 ? ['Workable with changes', 'text-warn'] : ['Poor fit', 'text-bad'];
   return (
-    <article className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-5" style={{ borderTop: `4px solid ${color}` }}>
+    <article className="flex flex-col gap-4 rounded-[2rem] border border-line bg-surface p-5 motion-safe:transition motion-safe:duration-300 motion-safe:hover:-translate-y-1 hover:shadow-[0_20px_40px_-24px_var(--fg)]">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="font-display text-lg font-semibold">{name}</h3>
-        <div className="text-right">
-          <div className="font-display text-3xl font-extrabold tabular-nums">{score}</div>
-          <div className={`whitespace-nowrap text-xs font-semibold ${band[1]}`}>{band[0]}</div>
+        <div className="flex min-w-0 flex-col items-start gap-3">
+          <h3 className="flex items-center gap-2 font-display text-xl font-black leading-tight tracking-tight">
+            <span aria-hidden className="size-3 shrink-0 rounded-full" style={{ background: color }} />{name}
+          </h3>
+          <span className={`inline-flex items-center gap-2 rounded-full border-2 border-current py-0.5 pl-1 pr-3 text-sm font-bold ${band[1]}`}>
+            <span className="grid h-8 min-w-8 place-items-center rounded-full bg-current px-1.5"><span className="text-base font-black tabular-nums text-surface">{score}</span></span>
+            {band[0]}
+          </span>
         </div>
+        <img src={SPECIES_ART[kind]} alt="" className="-mr-1 -mt-1 size-24 shrink-0 rounded-3xl p-2" style={{ background: `color-mix(in srgb, ${color} 20%, var(--surface))` }} />
       </div>
-      <dl className="grid grid-cols-3 gap-2 text-sm">
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
+        <div className="col-span-2 flex flex-col">
+          <dt className="text-xs font-bold uppercase tracking-widest text-muted">Per month</dt>
+          <dd className="font-display text-5xl font-black tracking-tighter tabular-nums">{gbp(sim.monthly)}</dd>
+        </div>
         <Figure label="Upfront" value={gbp(sim.upfront)} />
-        <Figure label="Per month" value={gbp(sim.monthly)} />
         <Figure label={`${sim.years.length} years`} value={gbp(sim.lifetime)} />
       </dl>
       <p className="text-sm">
@@ -328,8 +367,8 @@ function PetCard({ name, sim, color, emergencyOn, onResume }: { name: string; si
       <ul className="flex flex-col gap-1 text-sm">
         {issues.map((i) => <li key={i.message} className={SEVERITY[i.severity]}>{i.message}</li>)}
       </ul>
-      <button type="button" onClick={onResume} className="mt-auto self-start rounded-md border border-line px-3 py-2 text-sm font-semibold text-accent hover:border-accent">
-        Landlord resume &amp; checklist
+      <button type="button" onClick={onResume} className="btn-ghost mt-auto self-start">
+        Landlord resume &amp; checklist <Icon name="file-text" className="size-4" />
       </button>
     </article>
   );
@@ -350,11 +389,11 @@ const ROWS: Row[] = [
   ['Allergen level', (sp) => sp.allergen_level, (n) => `${n}/5`, 'low'],
 ];
 
-function Comparison({ results }: { results: { sp: SpeciesWithCosts; sim: Simulation }[] }) {
+function Comparison({ results, className }: { results: { sp: SpeciesWithCosts; sim: Simulation }[]; className: string }) {
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="font-display text-xl font-semibold">Side by side</h2>
-      <div className="overflow-x-auto rounded-xl border border-line bg-surface">
+    <section className={`${CELL} flex flex-col gap-3 ${className}`}>
+      <h2 className={H2}><Icon name="heart" className="size-6 text-accent" />Side by side</h2>
+      <div className="overflow-x-auto">
         <table className="w-full text-sm tabular-nums">
           <thead>
             <tr className="text-left">
@@ -368,7 +407,7 @@ function Comparison({ results }: { results: { sp: SpeciesWithCosts; sim: Simulat
               const target = best === 'low' ? Math.min(...vals) : best === 'high' ? Math.max(...vals) : null;
               const tie = vals.every((v) => v === target);
               return (
-                <tr key={label} className="border-t border-line">
+                <tr key={label} className="border-t border-line hover:bg-bg">
                   <th scope="row" className="p-3 text-left font-normal text-muted">{label}</th>
                   {vals.map((v, i) => (
                     <td key={results[i].sp.id} className={`p-3 text-right font-mono ${v === target && !tie ? 'font-semibold text-good' : ''}`}>
@@ -385,11 +424,11 @@ function Comparison({ results }: { results: { sp: SpeciesWithCosts; sim: Simulat
   );
 }
 
-function VetList({ vets, postcode, exotic }: { vets: Vet[] | 'loading' | { error: string }; postcode: string; exotic: string[] }) {
+function VetList({ vets, postcode, exotic, className }: { vets: Vet[] | 'loading' | { error: string }; postcode: string; exotic: string[]; className: string }) {
   return (
-    <section className="flex flex-col gap-3" aria-live="polite">
+    <section className={`${CELL} flex flex-col gap-3 ${className}`} aria-live="polite">
       <div>
-        <h2 className="font-display text-xl font-semibold">Vets near {postcode.toUpperCase()}</h2>
+        <h2 className={H2}><Icon name="map-pin" className="size-6 shrink-0 text-accent" />Vets near {postcode.toUpperCase()}</h2>
         {exotic.length > 0 && (
           <p className="text-sm text-warn">{exotic.join(' and ')} need{exotic.length === 1 ? 's' : ''} an exotics vet. Not every practice treats them, so call ahead.</p>
         )}
@@ -401,9 +440,9 @@ function VetList({ vets, postcode, exotic }: { vets: Vet[] | 'loading' | { error
       ) : vets.length === 0 ? (
         <p className="text-sm text-muted">No vets are mapped within 10 km. Try a nearby town's postcode.</p>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="grid gap-3">
           {vets.map((v) => (
-            <li key={v.id} className="flex min-w-0 flex-col gap-1 rounded-xl border border-line bg-surface p-4">
+            <li key={v.id} className="flex min-w-0 flex-col gap-1 rounded-2xl border border-line bg-bg p-4">
               <div className="flex items-start justify-between gap-3">
                 <a href={`https://www.openstreetmap.org/${v.id}`} target="_blank" rel="noreferrer" className="font-semibold underline-offset-2 hover:underline">{v.name}</a>
                 <span className="whitespace-nowrap font-mono text-sm tabular-nums text-muted">{v.km.toFixed(1)} km</span>
@@ -424,15 +463,15 @@ function VetList({ vets, postcode, exotic }: { vets: Vet[] | 'loading' | { error
 function Figure({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col">
-      <dt className="text-xs uppercase tracking-wide text-muted">{label}</dt>
-      <dd className="font-mono font-medium tabular-nums">{value}</dd>
+      <dt className="text-xs font-bold uppercase tracking-widest text-muted">{label}</dt>
+      <dd className="font-display text-xl font-black tracking-tight tabular-nums">{value}</dd>
     </div>
   );
 }
 
 function Check({ id, label, checked, disabled, onChange }: { id: string; label: string; checked: boolean; disabled?: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label htmlFor={id} className={`flex items-center gap-2 text-sm ${disabled ? 'opacity-50' : ''}`}>
+    <label htmlFor={id} className={`flex cursor-pointer items-center gap-2 text-sm ${disabled ? 'opacity-50' : ''}`}>
       <input type="checkbox" id={id} checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} /> {label}
     </label>
   );

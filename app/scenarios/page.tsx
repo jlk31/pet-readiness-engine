@@ -12,16 +12,16 @@ export default async function ScenariosPage() {
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 py-12 pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))]">
-      <a href="/" className="text-sm font-semibold text-accent">← Back to the simulator</a>
-      <h1 className="font-display text-3xl font-extrabold">My scenarios</h1>
+      <a href="/" className="text-sm font-bold text-accent underline-offset-4 hover:underline">← Back to the simulator</a>
+      <h1 className="font-display text-[clamp(2.25rem,7vw,4rem)] font-black leading-none tracking-tighter">My scenarios</h1>
       {!data?.length ? (
-        <p className="rounded-xl border border-dashed border-line p-8 text-center text-muted">
+        <p className="rounded-[2rem] border border-dashed border-line p-8 text-center text-muted">
           No saved scenarios yet. Set up a comparison in the simulator and press Save.
         </p>
       ) : (
         <ul className="flex flex-col gap-3">
           {data.map((s) => (
-            <li key={s.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface p-4">
+            <li key={s.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[2rem] border border-line bg-surface p-4">
               <div className="min-w-0">
                 <a href={`/?scenario=${s.id}`} className="font-semibold underline-offset-2 hover:underline">{s.name}</a>
                 <p className="text-sm text-muted">
@@ -30,7 +30,7 @@ export default async function ScenariosPage() {
               </div>
               <form action={deleteScenario}>
                 <input type="hidden" name="id" value={s.id} />
-                <button className="rounded-md border border-line px-3 py-1.5 text-sm text-bad hover:border-bad">Delete</button>
+                <button className="btn-ghost !border-bad text-bad hover:!bg-bad hover:!text-surface">Delete</button>
               </form>
             </li>
           ))}

@@ -106,3 +106,12 @@ The app runs without Supabase (accounts and saving are hidden). To enable them:
 ## Environment
 
 All variables are documented in `.env.example`.
+
+### Exact-location map (optional)
+
+Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to show a Google map under the postcode box. Users click the map or drag the pin to set an exact spot; the nearest postcode (Postcodes.io) fills the postcode field and sets the region, and the vet search uses the exact point. Without the key there is no map and the postcode flow is unchanged.
+
+- Create a **browser** key (Google Cloud > APIs & Services > Credentials), enable the **Maps JavaScript API**, and restrict the key by **HTTP referrer** to your site URL (and `localhost:3000/*` for development) and by API to the Maps JavaScript API. The key ships to the browser, so the referrer restriction is what protects it.
+- Optionally set `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` to a map ID from Google Cloud (Map Management); it falls back to `DEMO_MAP_ID`. A map ID is required for the pin and for the map to follow the system light/dark theme.
+- Privacy: the exact point stays in the browser. Only the existing `/api/vets` query receives it; saved scenarios still store just the encrypted postcode. `proxy.ts` allows the Google hosts the Maps JS CSP guide lists.
+- The artifact preview (`npm run preview:html`) never renders the map.

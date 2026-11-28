@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { distanceKm, toVets, type OsmElement } from './location.ts';
+import { distanceKm, toPlace, toVets, type OsmElement } from './location.ts';
 
 test('distanceKm: London to Edinburgh is ~534km', () => {
   assert.ok(Math.abs(distanceKm(51.5074, -0.1278, 55.9533, -3.1883) - 534) < 5);
@@ -23,4 +23,12 @@ test('toVets: nodes and ways, nearest first, tags mapped, unplaceable dropped', 
   assert.equal(v[0].website, undefined);
   assert.equal(v[2].website, 'https://far.example');
   assert.equal(toVets(els, 51.5, -0.1, 1).length, 1);
+});
+
+test('toPlace: region falls back to country, precise point wins, null means outside the UK', () => {
+  const eng = { postcode: 'SE1 7PB', region: 'London', country: 'England', admin_district: 'Lambeth', latitude: 51.5, longitude: -0.11 };
+  assert.deepEqual(toPlace(eng), { postcode: 'SE1 7PB', region: 'London', district: 'Lambeth', lat: 51.5, lon: -0.11 });
+  const sco = { postcode: 'EH1 1YZ', region: null, country: 'Scotland', admin_district: null, latitude: 55.95, longitude: -3.19 };
+  assert.deepEqual(toPlace(sco, { lat: 55.951, lon: -3.191 }), { postcode: 'EH1 1YZ', region: 'Scotland', district: '', lat: 55.951, lon: -3.191 });
+  assert.throws(() => toPlace(null), /outside the UK/);
 });

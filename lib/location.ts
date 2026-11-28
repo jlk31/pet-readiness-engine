@@ -4,14 +4,28 @@ export const UK_REGIONS = [
   'Yorkshire and The Humber', 'North West', 'North East', 'Scotland', 'Wales', 'Northern Ireland',
 ];
 
-export interface Place { region: string; district: string; lat: number; lon: number }
+export interface Place { postcode: string; region: string; district: string; lat: number; lon: number }
+
+interface PostcodesIoResult { postcode: string; region: string | null; country: string; admin_district: string | null; latitude: number; longitude: number }
+
+/** Postcodes.io result -> Place. `at` keeps a precise point instead of the postcode centroid. A null result means no UK postcode there. */
+export function toPlace(r: PostcodesIoResult | null | undefined, at?: { lat: number; lon: number }): Place {
+  if (!r) throw new Error('That spot is outside the UK. Pick a point inside the UK.');
+  return { postcode: r.postcode, region: r.region ?? r.country, district: r.admin_district ?? '', lat: at?.lat ?? r.latitude, lon: at?.lon ?? r.longitude };
+}
 
 export async function lookupPostcode(postcode: string): Promise<Place> {
   const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode.trim())}`);
   if (res.status === 404) throw new Error('That postcode was not found. Check it and try again.');
   if (!res.ok) throw new Error('Postcode lookup is unavailable right now.');
-  const { result } = await res.json();
-  return { region: result.region ?? result.country, district: result.admin_district, lat: result.latitude, lon: result.longitude };
+  return toPlace((await res.json()).result);
+}
+
+/** Nearest postcode to a map point (2 km search; the default 100 m misses rural spots). */
+export async function lookupPoint(lat: number, lon: number): Promise<Place> {
+  const res = await fetch(`https://api.postcodes.io/postcodes?lon=${lon}&lat=${lat}&limit=1&radius=2000`);
+  if (!res.ok) throw new Error('Postcode lookup is unavailable right now.');
+  return toPlace((await res.json()).result?.[0], { lat, lon });
 }
 
 export interface Vet {

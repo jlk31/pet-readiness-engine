@@ -5,10 +5,11 @@ import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Too
 import { SPECIES_ART } from '@/lib/art';
 import { MULTIPLIERS, SPECIES } from '@/lib/data';
 import { DEFAULT_ASSUMPTIONS, gbp, multipliersFor, simulate, type Assumptions, type Issue, type Simulation } from '@/lib/engine';
-import { lookupPostcode, UK_REGIONS, type Vet } from '@/lib/location';
+import { lookupPoint, lookupPostcode, UK_REGIONS, type Vet } from '@/lib/location';
 import type { Lifestyle, SpeciesWithCosts, WhatIfs } from '@/lib/types';
 import type { ScenarioInput } from '@/lib/validate';
 import Icon from './Icon';
+import PointMap from './PointMap';
 import Resume from './Resume';
 
 const SERIES = ['var(--s1)', 'var(--s2)', 'var(--s3)'];
@@ -35,6 +36,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
   const [postcode, setPostcode] = useState(initial?.postcode ?? 'SE1 7PB');
   const [region, setRegion] = useState(initial?.region ?? 'London');
   const [place, setPlace] = useState<string | null>(null);
+  const [point, setPoint] = useState<{ lat: number; lon: number } | null>(null); // exact spot; stays in the browser
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [picked, setPicked] = useState<string[]>(initial?.species_ids ?? SPECIES.map((s) => s.id).slice(0, 3));
   const [whatIfs, setWhatIfs] = useState<WhatIfs>(initial?.what_ifs ?? { emergency_year: 1 });
@@ -65,11 +67,28 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
       const r = await lookupPostcode(postcode);
       setRegion(r.region);
       setPlace(`${r.district}, ${r.region}`);
+      setPoint({ lat: r.lat, lon: r.lon });
       findVets(r.lat, r.lon);
     } catch (err) {
       setPlace(null);
       setVets(null);
       setLookupError(`${err instanceof Error ? err.message : 'Lookup failed.'} Pick your region below instead.`);
+    }
+  }
+
+  async function onPickPoint(lat: number, lon: number) {
+    setLookupError(null);
+    try {
+      const r = await lookupPoint(lat, lon);
+      setPoint({ lat, lon });
+      setPostcode(r.postcode);
+      setRegion(r.region);
+      setPlace(`${r.district}, ${r.region}`);
+      findVets(lat, lon);
+      return true;
+    } catch (err) {
+      setLookupError(err instanceof Error ? err.message : 'Lookup failed.');
+      return false;
     }
   }
 
@@ -166,6 +185,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
               className="field">
               {UK_REGIONS.map((r) => <option key={r}>{r}</option>)}
             </select>
+            <PointMap point={point} onPick={onPickPoint} />
           </form>
 
           <fieldset className="flex flex-col gap-2">

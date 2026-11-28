@@ -20,8 +20,10 @@ export async function proxy(request: NextRequest) {
     // Inline style attributes (Recharts, React style props) need 'unsafe-inline'; scripts stay nonce-only.
     "style-src 'self' 'unsafe-inline' https://api.fontshare.com",
     "font-src 'self' https://cdn.fontshare.com https://api.fontshare.com",
-    "img-src 'self' data: blob:",
-    "connect-src 'self' https://api.postcodes.io",
+    // Google Maps JS CSP guide: https://developers.google.com/maps/documentation/javascript/content-security-policy
+    "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com",
+    "connect-src 'self' https://api.postcodes.io https://*.googleapis.com https://*.google.com https://*.gstatic.com data: blob:",
+    'worker-src blob:',
     'frame-src https://challenges.cloudflare.com',
     "object-src 'none'",
     "base-uri 'self'",

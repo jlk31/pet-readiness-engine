@@ -21,3 +21,4 @@
 
 - 2026-11-28: Supabase on the free plan. Migrations are applied through the Management API SQL endpoint with a personal access token saved as a network secret (never in the repo). The free plan can't edit email templates, so `/auth/confirm` also accepts the PKCE `code` from the default template.
 - 2026-11-28: Permissions-Policy allows `geolocation=(self)` for "Use my location"; camera, microphone, payment and USB stay blocked. Approved by the user.
+- 2026-11-28: Palette changed to evergreen (#1E5A4F / dark #6FC2AE) + apricot (#CF6636 / dark #F0A27A) + slate blue on a near-white / green-charcoal canvas; all text pairs AA or better, body text over 14:1. Coordinate readout and entry removed at the user's request (lat/lon kept internally).

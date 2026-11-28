@@ -1,33 +1,34 @@
 @import "tailwindcss";
 
-/* Warm paper and ink, one vermillion accent. Form rail left, results right; stacks on phones. Two radii: card and control.
-   --edge is the border of anything you can operate (3:1 against its background); --line is only a hairline divider. */
+/* Warm white canvas, clean white surfaces, evergreen primary, apricot used sparingly (chosen map region, chart line 2). Form rail left, results right; stacks on phones. Two radii: card and control.
+   --edge is the border of anything you can operate (3:1 against its background); --line is only a hairline divider.
+   --s1..s3 are the chart and marker colours (evergreen, apricot, slate blue), 3:1 or better against both surfaces. */
 :root {
-  --bg: #f4eee3; --surface: #fbf8f1; --fg: #1d1914; --muted: #54483c; --line: #ddd0bb; --edge: #85766a;
-  --accent: #b82c14; --accent-hover: #9c2410; --accent-fg: #ffffff; --ring: #b82c14;
-  --s1: #b82c14; --s2: #1f6b4a; --s3: #8a5c00;
-  --good: #1e6b3a; --warn: #85500a; --bad: #b42318;
-  --map-fill: #e0d1b6; --map-line: #6f6150;
+  --bg: #fbfaf7; --surface: #ffffff; --fg: #1b1f1d; --muted: #5b625e; --line: #e7e3dc; --edge: #868c88;
+  --accent: #1e5a4f; --accent-hover: #164a40; --accent-fg: #ffffff; --ring: #1e5a4f;
+  --s1: #1e5a4f; --s2: #cf6636; --s3: #4a6a8e;
+  --good: #1d6b3c; --warn: #8a5200; --bad: #b3261e;
+  --map-fill: #dce8df; --map-line: #7c9487; --map-sub: #aec1b5; --map-sel: #f6d5c4;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #1b1713; --surface: #262019; --fg: #f3eadc; --muted: #b9ab98; --line: #41382e; --edge: #8f8171;
-    --accent: #ee7660; --accent-hover: #f58b77; --accent-fg: #1a0f0b; --ring: #ff9d88;
-    --s1: #ee7660; --s2: #74c79a; --s3: #e6b54a;
-    --good: #74c79a; --warn: #e6b54a; --bad: #ff9686;
-    --map-fill: #44392e; --map-line: #b3a48f; color-scheme: dark;
+    --bg: #111614; --surface: #182019; --fg: #eef1ee; --muted: #a3ada7; --line: #2a332e; --edge: #6e7b74;
+    --accent: #6fc2ae; --accent-hover: #88d0be; --accent-fg: #0a1511; --ring: #6fc2ae;
+    --s1: #6fc2ae; --s2: #f0a27a; --s3: #8fb0d6;
+    --good: #6fcb8e; --warn: #e9b84f; --bad: #ff9a8f;
+    --map-fill: #26372f; --map-line: #6a857a; --map-sub: #3b4f45; --map-sel: #4f3b31; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #1b1713; --surface: #262019; --fg: #f3eadc; --muted: #b9ab98; --line: #41382e; --edge: #8f8171;
-  --accent: #ee7660; --accent-hover: #f58b77; --accent-fg: #1a0f0b; --ring: #ff9d88;
-  --s1: #ee7660; --s2: #74c79a; --s3: #e6b54a;
-  --good: #74c79a; --warn: #e6b54a; --bad: #ff9686;
-  --map-fill: #44392e; --map-line: #b3a48f; color-scheme: dark;
+  --bg: #111614; --surface: #182019; --fg: #eef1ee; --muted: #a3ada7; --line: #2a332e; --edge: #6e7b74;
+  --accent: #6fc2ae; --accent-hover: #88d0be; --accent-fg: #0a1511; --ring: #6fc2ae;
+  --s1: #6fc2ae; --s2: #f0a27a; --s3: #8fb0d6;
+  --good: #6fcb8e; --warn: #e9b84f; --bad: #ff9a8f;
+  --map-fill: #26372f; --map-line: #6a857a; --map-sub: #3b4f45; --map-sel: #4f3b31; color-scheme: dark;
 }
 /* More contrast on request: solid borders, muted text as dark as body text. */
 @media (prefers-contrast: more) {
-  :root:root { --muted: var(--fg); --line: var(--edge); --edge: var(--fg); --map-line: var(--fg); }
+  :root:root { --muted: var(--fg); --line: var(--edge); --edge: var(--fg); --map-line: var(--fg); --map-sub: var(--fg); }
 }
 
 @theme inline {
@@ -110,5 +111,5 @@
 
 /* Print in light colours whatever the screen theme. */
 @media print {
-  :root:root:root { --bg: #fff; --surface: #fff; --fg: #000; --muted: #444; --line: #ccc; --edge: #666; --accent: #b82c14; --good: #1e6b3a; color-scheme: light; }
+  :root:root:root { --bg: #fff; --surface: #fff; --fg: #000; --muted: #444; --line: #ccc; --edge: #666; --accent: #1e5a4f; --accent-fg: #fff; --ring: #1e5a4f; --good: #1d6b3c; --warn: #8a5200; --bad: #b3261e; color-scheme: light; }
 }

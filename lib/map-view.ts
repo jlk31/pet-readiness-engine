@@ -27,17 +27,6 @@ export function viewAt(cx: number, cy: number, zoom: number, b: View, max = MAX_
   return clampView({ x: cx - w / 2, y: cy - h / 2, w, h }, b);
 }
 
-// ponytail: a rectangle, so the Channel Islands and the sea between Ireland and Wales pass; the map itself rejects non-land taps.
-const UK_BOX = { lat: [49.8, 61], lon: [-8.7, 1.8] };
-
-/** "54.5, -3.1" or "54.5 -3.1" -> a point inside the UK bounding box, else null. */
-export function parseCoords(text: string): { lat: number; lon: number } | null {
-  const m = /^\s*(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)\s*$/.exec(text);
-  if (!m) return null;
-  const lat = +m[1], lon = +m[2];
-  return lat >= UK_BOX.lat[0] && lat <= UK_BOX.lat[1] && lon >= UK_BOX.lon[0] && lon <= UK_BOX.lon[1] ? { lat, lon } : null;
-}
-
 export const easeOut = (t: number) => 1 - (1 - Math.min(Math.max(t, 0), 1)) ** 3;
 
 /** The view part-way from `a` to `b` (t 0..1): zoom moves by ratio, the centre in a straight line, so a fly-to feels even. */

@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { easeOut, lerpView, panViewBox, parseCoords, scaleBar, viewAt, zoomOf, zoomViewBox, type View } from '@/lib/map-view';
+import { easeOut, lerpView, panViewBox, scaleBar, viewAt, zoomOf, zoomViewBox, type View } from '@/lib/map-view';
 import type { Result } from '@/lib/search';
 import { DISTRICTS, districtAt } from '@/lib/uk-districts';
 import { REGIONS, toLatLon, toXY, VIEW } from '@/lib/uk-map';
@@ -12,8 +12,8 @@ import PlaceSearch from './PlaceSearch';
 interface Props {
   region: string;
   point: { lat: number; lon: number } | null;
-  /** Say "Area centre" instead of "Your exact spot" when the point is a postcode district centre. */
-  approx?: boolean;
+  /** The postcode (or postcode district) of the spot, when known, shown before the place name. */
+  postcode?: string | null;
   /** A region was chosen: a tap or typed point (exact), or a region by keyboard (its label point). */
   onPick: (region: string, lat: number, lon: number) => void;
   /** Nearest rescue centres and pet shops, drawn as numbered markers. */
@@ -36,20 +36,18 @@ const DOUBLE_TAP_MS = 300;
 const ARROWS: Record<string, [number, number]> = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowDown: [0, 1], ArrowUp: [0, -1] };
 // Regions have their own fill and border tokens so they stand clear of the page in both themes; the chosen one is also drawn with a heavier outline.
 const FILL = 'cursor-crosshair fill-(--map-fill) stroke-(--map-line) aria-checked:stroke-fg aria-checked:[stroke-width:2.5]';
-const CHOSEN = 'aria-checked:fill-accent aria-checked:hover:fill-accent';
-const CHOSEN_ZOOMED = 'aria-checked:fill-[color-mix(in_srgb,var(--accent)_22%,var(--map-fill))] aria-checked:hover:fill-[color-mix(in_srgb,var(--accent)_22%,var(--map-fill))]';
+const CHOSEN = 'aria-checked:fill-(--map-sel) aria-checked:hover:fill-(--map-sel)';
+const CHOSEN_ZOOMED = 'aria-checked:fill-[color-mix(in_srgb,var(--map-sel)_60%,var(--map-fill))] aria-checked:hover:fill-[color-mix(in_srgb,var(--map-sel)_60%,var(--map-fill))]';
 const MAP_BTN = 'btn-ghost size-11 bg-surface p-0 text-xl';
 
 // Council borders: hairlines only, no pointer events, redrawn only when their opacity step changes.
 const Districts = memo(function Districts({ opacity }: { opacity: number }) {
   return (
-    <g fill="none" pointerEvents="none" strokeLinejoin="round" strokeWidth={0.75} className="stroke-(--map-line)" style={{ opacity }}>
+    <g fill="none" pointerEvents="none" strokeLinejoin="round" strokeWidth={0.75} className="stroke-(--map-sub)" style={{ opacity }}>
       {DISTRICTS.map((d, i) => <path key={i} d={d.d} fillRule="evenodd" vectorEffect="non-scaling-stroke" />)}
     </g>
   );
 });
-
-const fmt = (p: { lat: number; lon: number }) => `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`;
 
 const D_PATH = new Map(DISTRICTS.map((d) => [d.name, d.d]));
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -62,7 +60,7 @@ function regionNear(lat: number, lon: number): string | undefined {
 }
 
 /** Offline UK map: inline SVG, no external requests, themed by the colour tokens. Zoom and pan change the viewBox only. */
-export default function RegionMap({ region, point, approx, onPick, found, selected, onSelect }: Props) {
+export default function RegionMap({ region, point, postcode, onPick, found, selected, onSelect }: Props) {
   const svg = useRef<SVGSVGElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const tip = useRef<HTMLSpanElement>(null);
@@ -71,8 +69,6 @@ export default function RegionMap({ region, point, approx, onPick, found, select
   const [focus, setFocus] = useState<string | null>(null);
   const [hover, setHover] = useState<{ name: string; region: string } | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-  const [coords, setCoords] = useState('');
-  const [copied, setCopied] = useState<string | null>(null);
   const [canLocate, setCanLocate] = useState(false);
   const [locating, setLocating] = useState(false);
   const viewRef = useRef(view);
@@ -329,13 +325,6 @@ export default function RegionMap({ region, point, approx, onPick, found, select
     }
   }
 
-  function goToCoords(e: React.FormEvent) {
-    e.preventDefault();
-    const c = parseCoords(coords);
-    if (!c) { setMsg('Enter latitude and longitude inside the UK, like 54.5, -3.1.'); return; }
-    if (drop(c.lat, c.lon)) flyTo(c.lat, c.lon, FLY_ZOOM);
-  }
-
   function choose(r: Result) {
     const { lat, lon } = toLatLon(r.x, r.y);
     drop(lat, lon, regionNear(lat, lon));
@@ -350,17 +339,10 @@ export default function RegionMap({ region, point, approx, onPick, found, select
       (err) => {
         setLocating(false);
         if (err.code === err.PERMISSION_DENIED) setCanLocate(false);
-        setMsg(`${err.code === err.PERMISSION_DENIED ? 'Location is blocked for this site.' : 'Your location could not be found.'} Tap the map or enter coordinates instead.`);
+        setMsg(`${err.code === err.PERMISSION_DENIED ? 'Location is blocked for this site.' : 'Your location could not be found.'} Tap the map or search for a place instead.`);
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
-  }
-
-  async function copy() {
-    if (!point) return;
-    try { await navigator.clipboard.writeText(fmt(point)); setCopied('Copied'); }
-    catch { setCopied('Copy failed'); }
-    setTimeout(() => setCopied(null), 2000);
   }
 
   const hoverPath = hover && D_PATH.get(hover.name);
@@ -387,7 +369,7 @@ export default function RegionMap({ region, point, approx, onPick, found, select
           {hoverPath && <path d={hoverPath} fillRule="evenodd" pointerEvents="none" className="fill-[color-mix(in_srgb,var(--accent)_16%,transparent)]" />}
           {spotPath && zoomed && (
             <path d={spotPath} fillRule="evenodd" pointerEvents="none" vectorEffect="non-scaling-stroke" strokeLinejoin="round"
-              className="fill-[color-mix(in_srgb,var(--accent)_28%,transparent)] stroke-fg" strokeWidth={2} />
+              className="fill-[color-mix(in_srgb,var(--s2)_32%,transparent)] stroke-fg" strokeWidth={2} />
           )}
           {upp > 0 && <Labels items={near} upp={upp} regionOp={fade(zoom, 0, 0.1, 1.9, 2.4)} countyOp={fade(zoom, 1.9, 2.3, 6.4, 7)} />}
           {/* Rescue centres (house) and pet shops (circle), numbered as in the list. They are decorative here: the list items are the buttons. */}
@@ -443,23 +425,11 @@ export default function RegionMap({ region, point, approx, onPick, found, select
       </div>
 
       {point ? (
-        <div className="flex flex-wrap items-center justify-between gap-x-4">
-          <p className="tabular-nums" role="status">
-            {approx ? 'Area centre' : 'Your exact spot'}: <strong>{fmt(point)}</strong> &middot; {spot ? `${spot.name}, ${spot.region}` : region}
-          </p>
-          <button type="button" className="link" onClick={copy}>{copied ?? 'Copy coordinates'}</button>
-        </div>
+        <p role="status">Your spot: <strong>{[postcode, spot ? `${spot.name}, ${spot.region}` : region].filter(Boolean).join(', ')}</strong></p>
       ) : (
         <p className="text-sm text-muted">Search for a place or tap the map to drop a pin. Zoom in to see council areas.</p>
       )}
 
-      <form onSubmit={goToCoords} className="flex flex-col gap-1">
-        <label htmlFor="coords" className="font-bold">Enter coordinates <span className="font-normal text-muted">(latitude, longitude)</span></label>
-        <div className="flex flex-wrap gap-2">
-          <input id="coords" value={coords} onChange={(e) => setCoords(e.target.value)} placeholder="54.5, -3.1" autoComplete="off" className="min-w-[8rem] flex-1 field" />
-          <button className="btn-ghost">Go to coordinates</button>
-        </div>
-      </form>
       {msg && <p className="text-warn" role="status">{msg}</p>}
 
       <p className="text-sm text-muted">

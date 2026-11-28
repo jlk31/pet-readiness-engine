@@ -14,7 +14,7 @@ export const placeKey = (p: NearbyPlace) => `${p.name}${p.lat}${p.lon}`;
  */
 export function PlaceGlyph({ kind, n, selected }: { kind: PlaceKind; n: number; selected?: boolean }) {
   const shelter = kind === 'shelter', shape = shelter ? 'M0 -13L13 -2V12H-13V-2Z' : undefined;
-  const common = { fill: shelter ? 'var(--s2)' : 'var(--s3)', stroke: selected ? 'var(--fg)' : 'var(--bg)', strokeWidth: selected ? 3 : 2, strokeLinejoin: 'round' as const };
+  const common = { fill: shelter ? 'var(--s1)' : 'var(--s3)', stroke: selected ? 'var(--fg)' : 'var(--bg)', strokeWidth: selected ? 3 : 2, strokeLinejoin: 'round' as const };
   return (
     <g>
       {shape ? <path d={shape} {...common} /> : <circle r={12} {...common} />}

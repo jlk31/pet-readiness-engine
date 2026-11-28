@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clampView, MAX_ZOOM, panViewBox, parseCoords, viewAt, zoomOf, zoomViewBox, type View } from './map-view.ts';
+import { clampView, MAX_ZOOM, panViewBox, viewAt, zoomOf, zoomViewBox, type View } from './map-view.ts';
 
 const B: View = { x: -150, y: 0, w: 900, h: 1100 };
 const near = (a: number, b: number) => assert.ok(Math.abs(a - b) < 1e-9, `${a} vs ${b}`);
@@ -41,13 +41,6 @@ test('panViewBox and clampView never leave the bounds; panning at 1x does nothin
 test('viewAt centres on the point when there is room', () => {
   const v = viewAt(300, 500, 4, B);
   near(v.x + v.w / 2, 300); near(v.y + v.h / 2, 500);
-});
-
-test('parseCoords: comma or space, signs, UK box only', () => {
-  assert.deepEqual(parseCoords('54.5, -3.1'), { lat: 54.5, lon: -3.1 });
-  assert.deepEqual(parseCoords(' 51.50123 -0.11876 '), { lat: 51.50123, lon: -0.11876 });
-  assert.deepEqual(parseCoords('55,-3'), { lat: 55, lon: -3 });
-  for (const s of ['', '54.5', 'a, b', '48.8566, 2.3522', '40.7, -74', '54.5, -3.1, 2', '95, 0', '54.5;-3.1']) assert.equal(parseCoords(s), null, s);
 });
 
 test('lerpView: starts at a, ends at b, zoom moves by ratio, stays in bounds', async () => {

@@ -52,10 +52,10 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
   const [postcode, setPostcode] = useState(initial?.postcode ?? 'SE1 7PB');
   const [region, setRegion] = useState(initial?.region ?? 'London');
   const [place, setPlace] = useState<string | null>(null);
-  const [point, setPoint] = useState<{ lat: number; lon: number } | null>(null); // exact spot; stays in the browser
+  const [point, setPoint] = useState<{ lat: number; lon: number } | null>(null); // the pin; stays in the browser
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null); // set when the postcode fell back to its area centre
-  const [approx, setApprox] = useState(false);
+  const [spotPc, setSpotPc] = useState<string | null>(null); // postcode of the spot, for the map's place line
   const pickSeq = useRef(0);
   // Nearest rescue centres and pet shops: listed below and drawn on the built-in map. `n` changes on every pick so picking the same one again flies there again.
   const found = useMemo<Nearby | null>(() => point && { shelter: nearestPlaces(point.lat, point.lon, 'shelter'), petshop: nearestPlaces(point.lat, point.lon, 'petshop') }, [point]);
@@ -108,7 +108,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
     e.preventDefault();
     setLookupError(null);
     setNote(null);
-    let r: { region: string; district: string; lat: number; lon: number } | null = null;
+    let r: { postcode?: string; region: string; district: string; lat: number; lon: number } | null = null;
     let outcode: string | null = null;
     if (process.env.NEXT_PUBLIC_PREVIEW !== '1') {
       try { r = await lookupPostcode(postcode); } catch { /* fall back below */ }
@@ -126,7 +126,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
     setRegion(r.region);
     setPlace(`${r.district}, ${r.region}`);
     setPoint({ lat: r.lat, lon: r.lon });
-    setApprox(!!outcode);
+    setSpotPc(outcode ?? r.postcode ?? null);
     setNote(outcode && `Using the area centre for ${outcode}`);
     if (process.env.NEXT_PUBLIC_PREVIEW === '1') setVets(null);
     else findVets(r.lat, r.lon);
@@ -138,7 +138,6 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
     try {
       const r = await lookupPoint(lat, lon);
       setPoint({ lat, lon });
-      setApprox(false);
       setNote(null);
       setPostcode(r.postcode);
       setRegion(r.region);
@@ -157,7 +156,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
     const d = districtAt(lat, lon), seq = ++pickSeq.current;
     setLookupError(null);
     setNote(null);
-    setApprox(false);
+    setSpotPc(null);
     setRegion(name);
     setPoint({ lat, lon });
     setPlace(d ? `${d.name}, ${d.region}` : name);
@@ -167,6 +166,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
       const r = await lookupPoint(lat, lon);
       if (seq !== pickSeq.current) return;
       setPostcode(r.postcode);
+      setSpotPc(r.postcode);
       setRegion(r.region);
       setPlace(`${r.district}, ${r.region}`);
     } catch { /* keep the offline district and region */ }
@@ -229,7 +229,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
           <div aria-hidden className="grid grid-cols-3 gap-4">
             {SPECIES.slice(0, 3).map((s, i) => (
               <div key={s.id} className="grid aspect-square place-items-center rounded-card p-4"
-                style={{ background: `color-mix(in srgb, ${SERIES[i]} 16%, var(--surface))`, color: SERIES[i] }}>
+                style={{ background: `color-mix(in srgb, ${SERIES[i]} 12%, var(--surface))`, color: SERIES[i] }}>
                 <Icon name={s.kind} className="size-full" />
               </div>
             ))}
@@ -273,7 +273,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
               {UK_REGIONS.map((r) => <option key={r}>{r}</option>)}
             </select>
             {process.env.NEXT_PUBLIC_PREVIEW === '1' || !process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-              ? <RegionMap region={region} point={point} approx={approx} onPick={onPickRegion} found={found} selected={sel} onSelect={selectPlace} />
+              ? <RegionMap region={region} point={point} postcode={spotPc} onPick={onPickRegion} found={found} selected={sel} onSelect={selectPlace} />
               : <PointMap point={point} onPick={onPickPoint} />}
           </section>
 

@@ -61,7 +61,7 @@ function PointMap({ point, onPick }: Props) {
         center: p ? { lat: p.lat, lng: p.lon } : { lat: 54, lng: -2.5 }, zoom: p ? 14 : 5, mapId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID',
         colorScheme: ColorScheme.FOLLOW_SYSTEM, disableDefaultUI: true, zoomControl: true, gestureHandling: 'cooperative',
       });
-      const marker = new AdvancedMarkerElement({ map, gmpDraggable: true, title: 'Your exact spot', position: p && { lat: p.lat, lng: p.lon } });
+      const marker = new AdvancedMarkerElement({ map, gmpDraggable: true, title: 'Your spot', position: p && { lat: p.lat, lng: p.lon } });
       api.current = { map, marker };
       const choose = async (lat: number, lng: number) => {
         marker.position = { lat, lng };
@@ -79,7 +79,7 @@ function PointMap({ point, onPick }: Props) {
   return (
     <div className="flex flex-col gap-2">
       <div ref={el} role="region" aria-label="Map to set your exact location" className="h-56 w-full overflow-hidden rounded-card border border-line bg-bg" />
-      <p className="text-xs text-muted">Click the map or drag the pin to your exact spot</p>
+      <p className="text-xs text-muted">Click the map or drag the pin to your spot</p>
     </div>
   );
 }

@@ -10,9 +10,10 @@ interface Props {
   onPick: (region: string, lat: number, lon: number) => void;
 }
 
-const MAX_H = 360;
+const MAX_H = 480;
 const ARROWS: Record<string, [number, number]> = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowDown: [0, 1], ArrowUp: [0, -1] };
-const FILL = 'fill-bg hover:fill-[color-mix(in_srgb,var(--accent)_16%,var(--surface))] aria-checked:fill-accent aria-checked:hover:fill-accent';
+// Regions have their own fill and border tokens so they stand clear of the page in both themes; the chosen one is also drawn with a heavier outline.
+const FILL = 'fill-(--map-fill) stroke-(--map-line) hover:fill-[color-mix(in_srgb,var(--accent)_30%,var(--map-fill))] aria-checked:fill-accent aria-checked:stroke-fg aria-checked:[stroke-width:2.5] aria-checked:hover:fill-accent';
 
 /** Offline UK map: inline SVG, no external requests, themed by the colour tokens. */
 export default function RegionMap({ region, point, onPick }: Props) {
@@ -50,7 +51,7 @@ export default function RegionMap({ region, point, onPick }: Props) {
           {REGIONS.map((r, i) => (
             <path key={r.name} d={r.d} fillRule="evenodd" role="radio" tabIndex={0} aria-label={r.name} aria-checked={r.name === region}
               strokeLinejoin="round" vectorEffect="non-scaling-stroke" style={{ outline: 'none' }}
-              className={`cursor-pointer stroke-line ${FILL}`}
+              strokeWidth={1.25} className={`cursor-pointer ${FILL}`}
               onClick={(e) => {
                 const b = svg.current!.getBoundingClientRect();
                 pick(r.name, ((e.clientX - b.left) / b.width) * VIEW.w, ((e.clientY - b.top) / b.height) * VIEW.h);
@@ -70,7 +71,7 @@ export default function RegionMap({ region, point, onPick }: Props) {
             style={{ left: `${(pin.x / VIEW.w) * 100}%`, top: `${(pin.y / VIEW.h) * 100}%` }} />
         )}
       </div>
-      <p className="text-xs text-muted">Tap your area on the map, or type a postcode above.</p>
+      <p className="text-sm text-muted">Tap your area on the map, or type a postcode above. Chosen: <strong className="text-fg">{region}</strong>.</p>
     </div>
   );
 }

@@ -8,3 +8,5 @@
 - WebFetch can fail on DNS for hosts the curl proxy allows; fall back to `curl` and parse locally.
 - Node's global `fetch` ignores the sandbox HTTPS proxy (ENOTFOUND); build scripts use `curl` via execFileSync. `npm run preview:html` needs network for Fontshare.
 - The Stop hook asks to re-author commits as Claude; the user wants every commit as jlk31, so ignore it.
+- In this sandbox, run the app with `NODE_USE_ENV_PROXY=1` so server-side `fetch` (Supabase, Overpass) goes through the proxy. `node:https` (the product reader's safeFetch) still can't reach the internet here.
+- New Supabase projects don't auto-grant table access to `anon`/`authenticated`; migration 20261128120000 grants read on the reference tables.

@@ -13,15 +13,15 @@ export default async function ScenariosPage() {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 py-12 pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))]">
       <a href="/" className="text-sm font-bold text-accent underline-offset-4 hover:underline">← Back to the simulator</a>
-      <h1 className="font-display text-[clamp(2.25rem,7vw,4rem)] font-black leading-none tracking-tighter">My scenarios</h1>
+      <h1 className="font-display text-[clamp(2rem,5vw,3rem)] font-bold leading-tight tracking-tight">My scenarios</h1>
       {!data?.length ? (
-        <p className="rounded-[2rem] border border-dashed border-line p-8 text-center text-muted">
-          No saved scenarios yet. Set up a comparison in the simulator and press Save.
+        <p className="rounded-card border border-dashed border-line p-8 text-center text-muted">
+          No saved scenarios yet. Set up a comparison in the simulator and press Save this scenario.
         </p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-4">
           {data.map((s) => (
-            <li key={s.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[2rem] border border-line bg-surface p-4">
+            <li key={s.id} className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-surface p-6">
               <div className="min-w-0">
                 <a href={`/?scenario=${s.id}`} className="font-semibold underline-offset-2 hover:underline">{s.name}</a>
                 <p className="text-sm text-muted">

@@ -40,7 +40,7 @@ export default function Resume({ sp, sim, life, region, onClose }: {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 py-8 pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))]">
-      <div className="flex flex-col gap-4 rounded-[2rem] border border-line bg-surface p-5 print:hidden">
+      <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-6 print:hidden">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button type="button" onClick={onClose} className="text-sm font-bold text-accent underline-offset-4 hover:underline">← Back to comparison</button>
           <div className="flex gap-2">
@@ -62,11 +62,11 @@ export default function Resume({ sp, sim, life, region, onClose }: {
         </div>
       </div>
 
-      <div ref={doc} className="flex flex-col gap-8 rounded-[2rem] border border-line bg-surface p-6 print:border-0 print:p-0">
+      <div ref={doc} className="flex flex-col gap-8 rounded-card border border-line bg-surface p-6 print:border-0 print:p-0">
         <article className="flex flex-col gap-5">
           <header className="flex flex-col gap-1 border-b border-line pb-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-accent">Landlord Pet Resume</p>
-            <h1 className="font-display text-[clamp(2.25rem,7vw,4rem)] font-black leading-none tracking-tighter">{petName.trim() || sp.name}</h1>
+            <p className="text-sm font-bold text-accent">Landlord pet resume</p>
+            <h1 className="font-display text-[clamp(2rem,5vw,3rem)] font-bold leading-tight tracking-tight">{petName.trim() || sp.name}</h1>
             <p className="text-sm text-muted">
               {petName.trim() ? `${sp.name}. ` : ''}Prepared by {owner.trim() || '[your name]'} on {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.
             </p>

@@ -23,7 +23,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
-    "@iconify-json/fluent-emoji": "^1.2.7",
+    "@iconify-json/game-icons": "^1.2.4",
     "@iconify-json/ph": "^1.2.2",
     "@tailwindcss/cli": "^4.1.14",
     "@tailwindcss/postcss": "^4.1.14",

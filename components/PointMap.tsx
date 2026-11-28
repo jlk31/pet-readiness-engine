@@ -78,7 +78,7 @@ function PointMap({ point, onPick }: Props) {
   if (failed) return null;
   return (
     <div className="flex flex-col gap-2">
-      <div ref={el} role="region" aria-label="Map to set your exact location" className="h-56 w-full overflow-hidden rounded-[1.5rem] border border-line bg-bg" />
+      <div ref={el} role="region" aria-label="Map to set your exact location" className="h-56 w-full overflow-hidden rounded-card border border-line bg-bg" />
       <p className="text-xs text-muted">Click the map or drag the pin to your exact spot</p>
     </div>
   );

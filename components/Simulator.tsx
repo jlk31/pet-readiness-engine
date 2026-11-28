@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { SPECIES_ART } from '@/lib/art';
 import { MULTIPLIERS, SPECIES } from '@/lib/data';
 import { DEFAULT_ASSUMPTIONS, gbp, multipliersFor, simulate, type Assumptions, type Issue, type Simulation } from '@/lib/engine';
 import { lookupPoint, lookupPostcode, UK_REGIONS, type Vet } from '@/lib/location';
@@ -14,8 +13,9 @@ import Resume from './Resume';
 
 const SERIES = ['var(--s1)', 'var(--s2)', 'var(--s3)'];
 const FREQ = { one_off: 'one-off', monthly: '/month', annual: '/year', per_night: '/night', emergency: 'if needed' } as const;
-const CELL = 'rounded-[2rem] border border-line bg-surface p-5 sm:p-6';
-const H2 = 'flex items-center gap-2 font-display text-2xl font-black tracking-tight';
+const CELL = 'rounded-card border border-line bg-surface p-6';
+const H2 = 'font-display text-2xl font-bold tracking-tight';
+const EYEBROW = 'mb-2 text-sm font-bold';
 const SEVERITY: Record<Issue['severity'], string> = { blocker: 'text-bad', warning: 'text-warn', info: 'text-muted' };
 
 // Example starting point, labelled as such in the UI.
@@ -115,10 +115,10 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
 
   return (
     <div className="overflow-x-clip">
-    <div className="mx-auto max-w-7xl py-6 pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))]">
-      <header className="mb-10 flex flex-col gap-8 lg:mb-14">
+    <div className="mx-auto max-w-7xl py-8 pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))]">
+      <header className="mb-12 flex flex-col gap-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="flex items-center gap-2 font-display text-lg font-black tracking-tight"><Icon name="paw-print" className="size-6 text-accent" />pawprint-ledger</p>
+          <p className="font-display text-lg font-bold tracking-tight">pawprint-ledger</p>
           {account && (
             <nav className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
               {account.email ? (
@@ -133,38 +133,38 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
             </nav>
           )}
         </div>
-        <div className="grid items-end gap-10 lg:grid-cols-[1.5fr_1fr]">
+        <div className="grid items-end gap-12 lg:grid-cols-[1.5fr_1fr]">
           <div className="flex min-w-0 flex-col gap-6">
-            <h1 className="font-display text-[clamp(2.75rem,8.5vw,7rem)] font-black leading-[0.92] tracking-tighter">
-              Know what a pet <span className="text-accent">really costs</span> before you commit.
+            <h1 className="font-display text-[clamp(2.25rem,6vw,4.5rem)] font-bold leading-[1.05] tracking-tight">
+              Compare what different pets cost to keep.
             </h1>
             <p className="max-w-[48ch] text-lg text-muted">
-              UK prices adjusted for your region, extra costs added where your routine leaves gaps, and the full lifetime bill.
+              Prices are UK averages, adjusted for your region and for the hours you are out.
               {initial ? ` Showing your saved scenario "${initial.name}".` : ' Starts with an example: renting a flat in London, out 9 hours a day.'}
             </p>
           </div>
-          <div aria-hidden className="grid grid-cols-3 gap-3 lg:gap-4">
+          <div aria-hidden className="grid grid-cols-3 gap-4">
             {SPECIES.slice(0, 3).map((s, i) => (
-              <div key={s.id} className={`float aspect-[3/4] rounded-[1.75rem] p-2 ${['-rotate-6', 'mt-8 rotate-3', '-mt-2 -rotate-2'][i]}`}
-                style={{ background: `color-mix(in srgb, ${SERIES[i]} 22%, var(--surface))`, animationDelay: `${i * -2}s` }}>
-                <img src={SPECIES_ART[s.kind]} alt="" className="size-full object-contain" />
+              <div key={s.id} className="grid aspect-square place-items-center rounded-card p-4"
+                style={{ background: `color-mix(in srgb, ${SERIES[i]} 16%, var(--surface))`, color: SERIES[i] }}>
+                <Icon name={s.kind} className="size-full" />
               </div>
             ))}
           </div>
         </div>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[21rem_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[22rem_1fr]">
         {/* Inputs */}
-        <aside className="flex flex-col gap-6 self-start rounded-[2rem] border border-line bg-surface p-5 sm:p-6 lg:sticky lg:top-4">
+        <aside className="flex flex-col gap-6 self-start rounded-card border border-line bg-surface p-6 lg:sticky lg:top-4">
           {onSave && (
-            <form onSubmit={onSaveClick} className="flex flex-col gap-2 border-b border-line pb-5">
-              <label htmlFor="scenario-name" className="text-sm font-bold">Save this scenario</label>
+            <form onSubmit={onSaveClick} className="flex flex-col gap-2 border-b border-line pb-6">
+              <label htmlFor="scenario-name" className="text-sm font-bold">Scenario name</label>
               <div className="flex gap-2">
                 <input id="scenario-name" value={scenarioName} onChange={(e) => setScenarioName(e.target.value)} maxLength={80} required
                   placeholder="e.g. Flat in Camden" className="min-w-0 flex-1 field" />
                 <button disabled={saveState.saving} className="btn">
-                  {saveState.saving ? 'Saving…' : 'Save'}
+                  {saveState.saving ? 'Saving…' : 'Save this scenario'}
                 </button>
               </div>
               {saveState.error && <p className="text-sm text-bad" role="alert">{saveState.error}</p>}
@@ -176,7 +176,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
             <div className="flex gap-2">
               <input id="postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} autoComplete="postal-code"
                 className="min-w-0 flex-1 field font-mono uppercase" />
-              <button className="btn">Look up</button>
+              <button className="btn">Find vets near me</button>
             </div>
             {place && <p className="text-sm text-good">{place}</p>}
             {lookupError && <p className="text-sm text-warn">{lookupError}</p>}
@@ -189,10 +189,10 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
           </form>
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-2 text-xs font-bold uppercase tracking-widest text-muted">Your home</legend>
-            <div className="grid grid-cols-2 gap-2">
+            <legend className={EYEBROW}>Your home</legend>
+            <div className="mb-2 grid grid-cols-2 divide-x divide-line overflow-hidden rounded-control border border-line">
               {(['flat', 'house'] as const).map((h) => (
-                <label key={h} className="relative flex cursor-pointer items-center justify-center gap-2 rounded-xl border-[1.5px] border-line px-3 py-2 text-sm font-bold capitalize has-[:checked]:border-fg has-[:checked]:bg-fg has-[:checked]:text-bg has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
+                <label key={h} className="relative flex cursor-pointer items-center justify-center gap-2 px-3 py-2 text-sm font-bold capitalize has-[:checked]:bg-fg has-[:checked]:text-bg has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-accent">
                   <input type="radio" id={`housing-${h}`} name="housing" checked={life.housing === h} onChange={() => set('housing', h)} className="sr-only" />
                   <Icon name="house" className="size-4" />{h}
                 </label>
@@ -210,26 +210,25 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
           <Range id="holiday" label="Nights away per year" value={life.holiday_nights_per_year} min={0} max={30} suffix=""
             onChange={(v) => set('holiday_nights_per_year', v)} />
 
-          <fieldset className="flex flex-col gap-2">
-            <legend className="mb-2 text-xs font-bold uppercase tracking-widest text-muted">Compare (up to 3)</legend>
+          <fieldset className="flex flex-col">
+            <legend className={EYEBROW}>Compare (up to 3)</legend>
             {SPECIES.map((s) => {
               const on = picked.includes(s.id);
               const disabled = !on && picked.length >= 3;
               return (
                 <label key={s.id} htmlFor={`pick-${s.id}`}
-                  className={`flex cursor-pointer items-center gap-3 rounded-2xl border-[1.5px] border-line p-2 pr-3 text-sm font-bold has-[:checked]:border-fg has-[:checked]:bg-bg has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent motion-safe:transition motion-safe:hover:-translate-y-0.5 ${disabled ? 'opacity-50' : ''}`}>
-                  <input type="checkbox" id={`pick-${s.id}`} className="sr-only" checked={on} disabled={disabled}
-                    onChange={(e) => setPicked((p) => (e.target.checked ? [...p, s.id] : p.filter((x) => x !== s.id)))} />
-                  <img src={SPECIES_ART[s.kind]} alt="" className="size-12 shrink-0 rounded-xl bg-line/50 p-1" />
+                  className={`flex cursor-pointer items-center gap-3 border-t border-line py-2 text-sm has-[:checked]:font-bold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent ${disabled ? 'opacity-50' : ''}`}>
+                  <Icon name={s.kind} className={`size-8 ${on ? 'text-fg' : 'text-muted'}`} />
                   <span className="flex-1">{s.name}</span>
-                  <span aria-hidden className={`grid size-5 place-items-center rounded-full border-[1.5px] text-xs ${on ? 'border-accent bg-accent text-accent-fg' : 'border-muted'}`}>{on ? '✓' : ''}</span>
+                  <input type="checkbox" id={`pick-${s.id}`} checked={on} disabled={disabled}
+                    onChange={(e) => setPicked((p) => (e.target.checked ? [...p, s.id] : p.filter((x) => x !== s.id)))} />
                 </label>
               );
             })}
           </fieldset>
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-2 text-xs font-bold uppercase tracking-widest text-muted">Stress test</legend>
+            <legend className={EYEBROW}>Stress test</legend>
             <Check id="emergency" label="Emergency vet bill" checked={!!whatIfs.emergency}
               onChange={(v) => setWhatIfs((w) => ({ ...w, emergency: v }))} />
             {whatIfs.emergency && (
@@ -243,7 +242,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
           </fieldset>
 
           <fieldset className="flex flex-col gap-3">
-            <legend className="mb-2 text-xs font-bold uppercase tracking-widest text-muted">Assumptions</legend>
+            <legend className={EYEBROW}>Assumptions</legend>
             <Range id="start-age" label="Pet's age when you get them" value={assume.startAge} min={0} max={10} suffix=" yrs"
               onChange={(v) => setAssume((a) => ({ ...a, startAge: v }))} />
             <div className="flex flex-col gap-1">
@@ -261,32 +260,32 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
         </aside>
 
         {/* Results */}
-        <main className="flex min-w-0 flex-col gap-4">
+        <main className="flex min-w-0 flex-col gap-6">
           {results.length === 0 ? (
-            <p className="rounded-[2rem] border border-dashed border-line p-8 text-center text-muted">Pick at least one pet to compare.</p>
+            <p className="rounded-card border border-dashed border-line p-8 text-center text-muted">Pick at least one pet to compare.</p>
           ) : (
             <>
-              <section className="grid gap-4 md:grid-cols-[repeat(auto-fit,minmax(17rem,1fr))]">
+              <section className="grid gap-6 md:grid-cols-[repeat(auto-fit,minmax(17rem,1fr))]">
                 {results.map(({ sp, sim }, i) => (
                   <PetCard key={sp.id} name={sp.name} kind={sp.kind} sim={sim} color={SERIES[i]} emergencyOn={!!whatIfs.emergency}
                     onResume={() => { setResumeFor(sp.id); scrollTo(0, 0); }} />
                 ))}
               </section>
 
-              <div className="grid gap-4 lg:grid-cols-6">
+              <div className="grid gap-6 lg:grid-cols-6">
               <section className={`${CELL} lg:col-span-6`}>
-                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0 max-w-[65ch]">
-                    <h2 className={H2}><Icon name="chart-line-up" className="size-6 text-accent" />Lifetime cost, year by year</h2>
+                    <h2 className={H2}>Lifetime cost, year by year</h2>
                     <p className="text-sm text-muted">
                       {perYear ? 'What each year costs.' : 'Running total from the year you get them.'} Other prices rise {assume.generalInflation * 100}% a year,
                       vet and insurance {Math.round(assume.medicalInflation * 100)}%. Insurance and check-ups cost more once a pet is a senior.
                     </p>
                   </div>
-                  <div role="group" aria-label="Chart view" className="flex rounded-full border-[1.5px] border-line p-0.5 text-sm">
+                  <div role="group" aria-label="Chart view" className="flex divide-x divide-line overflow-hidden rounded-control border border-line text-sm">
                     {[['Running total', false], ['Per year', true]].map(([label, v]) => (
                       <button key={String(label)} type="button" aria-pressed={perYear === v} onClick={() => setPerYear(v as boolean)}
-                        className={`rounded-full px-4 py-1.5 font-bold ${perYear === v ? 'bg-accent text-accent-fg' : 'text-muted hover:text-fg'}`}>{label}</button>
+                        className={`px-4 py-2 font-bold ${perYear === v ? 'bg-accent text-accent-fg' : 'text-muted hover:text-fg'}`}>{label}</button>
                     ))}
                   </div>
                 </div>
@@ -297,7 +296,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
                       <XAxis dataKey="year" tick={{ fill: 'var(--muted)', fontSize: 12 }} stroke="var(--line)" label={{ value: 'Year', position: 'insideBottomRight', offset: -2, fill: 'var(--muted)', fontSize: 12 }} />
                       <YAxis tickFormatter={(v: number) => `£${(v / 100000).toLocaleString('en-GB', { maximumFractionDigits: 1 })}k`} tick={{ fill: 'var(--muted)', fontSize: 12 }} stroke="var(--line)" width={48} />
                       <Tooltip formatter={(v) => gbp(Number(v))} labelFormatter={(y) => `Year ${y}`}
-                        contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--fg)', borderRadius: 12 }} />
+                        contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--fg)', borderRadius: 8 }} />
                       {whatIfs.emergency && (
                         <ReferenceLine x={Math.min(whatIfs.emergency_year ?? 1, maxYears)} stroke="var(--bad)" strokeDasharray="4 3"
                           label={{ value: 'Emergency', position: 'insideTopLeft', fill: 'var(--bad)', fontSize: 12 }} />
@@ -313,12 +312,12 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
               {results.length > 1 && <Comparison results={results} className={vets ? 'lg:col-span-4' : 'lg:col-span-6'} />}
               {vets && <VetList vets={vets} postcode={postcode} className={results.length > 1 ? 'lg:col-span-2' : 'lg:col-span-6'} exotic={results.filter((r) => ['reptile', 'bird'].includes(r.sp.kind)).map((r) => r.sp.name)} />}
 
-              <section className={`${CELL} flex flex-col gap-3 lg:col-span-6`}>
-                <h2 className={H2}><Icon name="wallet" className="size-6 text-accent" />Cost breakdown</h2>
+              <section className={`${CELL} flex flex-col lg:col-span-6`}>
+                <h2 className={`${H2} mb-4`}>Cost breakdown</h2>
                 {results.map(({ sp, sim }) => (
-                  <details key={sp.id} className="rounded-2xl border border-line bg-bg">
-                    <summary className="cursor-pointer px-5 py-3 font-bold">{sp.name}</summary>
-                    <div className="overflow-x-auto px-5 pb-4">
+                  <details key={sp.id} className="border-t border-line">
+                    <summary className="cursor-pointer py-4 font-bold">{sp.name}</summary>
+                    <div className="overflow-x-auto pb-4">
                       <table className="w-full text-sm tabular-nums">
                         <tbody>
                           {sim.lines.map(({ item, amount, active }) => (
@@ -347,6 +346,10 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
           )}
         </main>
       </div>
+      <footer className="mt-12 border-t border-line pt-6 text-xs text-muted">
+        Pet silhouettes from <a href="https://game-icons.net" className="underline" target="_blank" rel="noreferrer">game-icons.net</a> by Lorc, Delapouite and contributors,
+        licensed <a href="https://creativecommons.org/licenses/by/3.0/" className="underline" target="_blank" rel="noreferrer">CC BY 3.0</a>.
+      </footer>
     </div>
     </div>
   );
@@ -356,23 +359,20 @@ function PetCard({ name, kind, sim, color, emergencyOn, onResume }: { name: stri
   const { score, issues } = sim.readiness;
   const band = score >= 80 ? ['Good fit', 'text-good'] : score >= 50 ? ['Workable with changes', 'text-warn'] : ['Poor fit', 'text-bad'];
   return (
-    <article className="flex flex-col gap-4 rounded-[2rem] border border-line bg-surface p-5 motion-safe:transition motion-safe:duration-300 motion-safe:hover:-translate-y-1 hover:shadow-[0_20px_40px_-24px_var(--fg)]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-col items-start gap-3">
-          <h3 className="flex items-center gap-2 font-display text-xl font-black leading-tight tracking-tight">
-            <span aria-hidden className="size-3 shrink-0 rounded-full" style={{ background: color }} />{name}
+    <article className={`${CELL} flex flex-col gap-4`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-col items-start gap-2">
+          <h3 className="flex items-center gap-2 font-display text-xl font-bold leading-tight tracking-tight">
+            <span aria-hidden className="h-1 w-6 shrink-0" style={{ background: color }} />{name}
           </h3>
-          <span className={`inline-flex items-center gap-2 rounded-full border-2 border-current py-0.5 pl-1 pr-3 text-sm font-bold ${band[1]}`}>
-            <span className="grid h-8 min-w-8 place-items-center rounded-full bg-current px-1.5"><span className="text-base font-black tabular-nums text-surface">{score}</span></span>
-            {band[0]}
-          </span>
+          <p className={`text-sm font-bold ${band[1]}`}>Fit score {score}: {band[0]}</p>
         </div>
-        <img src={SPECIES_ART[kind]} alt="" className="-mr-1 -mt-1 size-24 shrink-0 rounded-3xl p-2" style={{ background: `color-mix(in srgb, ${color} 20%, var(--surface))` }} />
+        <span style={{ color }}><Icon name={kind} className="size-16" /></span>
       </div>
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
+      <dl className="grid grid-cols-2 gap-4 text-sm">
         <div className="col-span-2 flex flex-col">
-          <dt className="text-xs font-bold uppercase tracking-widest text-muted">Per month</dt>
-          <dd className="font-display text-5xl font-black tracking-tighter tabular-nums">{gbp(sim.monthly)}</dd>
+          <dt className="text-xs font-bold text-muted">Per month</dt>
+          <dd className="font-display text-5xl font-bold tracking-tight tabular-nums">{gbp(sim.monthly)}</dd>
         </div>
         <Figure label="Upfront" value={gbp(sim.upfront)} />
         <Figure label={`${sim.years.length} years`} value={gbp(sim.lifetime)} />
@@ -411,8 +411,8 @@ const ROWS: Row[] = [
 
 function Comparison({ results, className }: { results: { sp: SpeciesWithCosts; sim: Simulation }[]; className: string }) {
   return (
-    <section className={`${CELL} flex flex-col gap-3 ${className}`}>
-      <h2 className={H2}><Icon name="heart" className="size-6 text-accent" />Side by side</h2>
+    <section className={`${CELL} flex flex-col gap-4 ${className}`}>
+      <h2 className={H2}>Side by side</h2>
       <div className="overflow-x-auto">
         <table className="w-full text-sm tabular-nums">
           <thead>
@@ -446,9 +446,9 @@ function Comparison({ results, className }: { results: { sp: SpeciesWithCosts; s
 
 function VetList({ vets, postcode, exotic, className }: { vets: Vet[] | 'loading' | { error: string }; postcode: string; exotic: string[]; className: string }) {
   return (
-    <section className={`${CELL} flex flex-col gap-3 ${className}`} aria-live="polite">
+    <section className={`${CELL} flex flex-col gap-4 ${className}`} aria-live="polite">
       <div>
-        <h2 className={H2}><Icon name="map-pin" className="size-6 shrink-0 text-accent" />Vets near {postcode.toUpperCase()}</h2>
+        <h2 className={H2}>Vets near {postcode.toUpperCase()}</h2>
         {exotic.length > 0 && (
           <p className="text-sm text-warn">{exotic.join(' and ')} need{exotic.length === 1 ? 's' : ''} an exotics vet. Not every practice treats them, so call ahead.</p>
         )}
@@ -460,14 +460,14 @@ function VetList({ vets, postcode, exotic, className }: { vets: Vet[] | 'loading
       ) : vets.length === 0 ? (
         <p className="text-sm text-muted">No vets are mapped within 10 km. Try a nearby town's postcode.</p>
       ) : (
-        <ul className="grid gap-3">
+        <ul className="flex flex-col">
           {vets.map((v) => (
-            <li key={v.id} className="flex min-w-0 flex-col gap-1 rounded-2xl border border-line bg-bg p-4">
+            <li key={v.id} className="flex min-w-0 flex-col gap-1 border-t border-line py-4">
               <div className="flex items-start justify-between gap-3">
                 <a href={`https://www.openstreetmap.org/${v.id}`} target="_blank" rel="noreferrer" className="font-semibold underline-offset-2 hover:underline">{v.name}</a>
                 <span className="whitespace-nowrap font-mono text-sm tabular-nums text-muted">{v.km.toFixed(1)} km</span>
               </div>
-              {v.emergency && <span className="self-start rounded-full border border-good px-2 text-xs font-semibold text-good">24-hour / emergency</span>}
+              {v.emergency && <span className="self-start rounded-control border border-good px-2 text-xs font-semibold text-good">24-hour / emergency</span>}
               {v.address && <p className="text-sm text-muted">{v.address}</p>}
               {v.phone && <p className="select-all font-mono text-sm">{v.phone}</p>}
               {v.website && <a href={v.website} target="_blank" rel="noreferrer" className="truncate text-sm text-accent underline-offset-2 hover:underline">{v.website.replace(/^https?:\/\//, '')}</a>}
@@ -475,7 +475,7 @@ function VetList({ vets, postcode, exotic, className }: { vets: Vet[] | 'loading
           ))}
         </ul>
       )}
-      <p className="text-xs text-muted">Practice data © OpenStreetMap contributors. Check opening hours with the practice.</p>
+      <p className="text-xs text-muted">Practice data &copy; OpenStreetMap contributors. Check opening hours with the practice.</p>
     </section>
   );
 }
@@ -483,8 +483,8 @@ function VetList({ vets, postcode, exotic, className }: { vets: Vet[] | 'loading
 function Figure({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col">
-      <dt className="text-xs font-bold uppercase tracking-widest text-muted">{label}</dt>
-      <dd className="font-display text-xl font-black tracking-tight tabular-nums">{value}</dd>
+      <dt className="text-xs font-bold text-muted">{label}</dt>
+      <dd className="font-display text-xl font-bold tracking-tight tabular-nums">{value}</dd>
     </div>
   );
 }

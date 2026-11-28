@@ -19,15 +19,15 @@ export default function LoginForm({ configured, siteKey, nonce, confirmFailed }:
     <main className="mx-auto flex max-w-md flex-col gap-6 py-12 pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))]">
       <a href="/" className="text-sm font-bold text-accent underline-offset-4 hover:underline">← Back to the simulator</a>
       <div className="flex flex-col gap-1">
-        <h1 className="font-display text-[clamp(2.25rem,7vw,4rem)] font-black leading-none tracking-tighter">Sign in</h1>
+        <h1 className="font-display text-[clamp(2rem,5vw,3rem)] font-bold leading-tight tracking-tight">Sign in</h1>
         <p className="text-muted">Save scenarios and come back to them later.</p>
       </div>
       {!configured ? (
-        <p className="rounded-[2rem] border border-line bg-surface p-5 text-sm text-warn">
+        <p className="rounded-card border border-line bg-surface p-6 text-sm text-warn">
           Accounts are not set up on this server yet. Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (see README).
         </p>
       ) : (
-        <form className="flex flex-col gap-4 rounded-[2rem] border border-line bg-surface p-5">
+        <form className="flex flex-col gap-4 rounded-card border border-line bg-surface p-6">
           <label htmlFor="email" className="flex flex-col gap-1 text-sm font-semibold">Email
             <input id="email" name="email" type="email" required maxLength={254} autoComplete="email"
               className="field font-normal" />

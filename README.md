@@ -9,12 +9,13 @@ Files marked ✓ exist; the rest is the target layout for upcoming phases.
 ```
 app/
   layout.tsx                 ✓
-  page.tsx                   ✓ # simulator: lifestyle form, score, 2–3 pet comparison, lifetime chart
+  page.tsx                   ✓ # simulator: lifestyle form, score, 2 or 3 pet comparison, lifetime chart
   scenarios/page.tsx         ✓ # saved scenarios (signed-in only)
   login/                     ✓ # sign in / create account (+ optional Turnstile)
   auth/confirm/route.ts      ✓ # email confirmation link target
   actions.ts                 ✓ # server actions: auth, save/delete scenario (validated, rate-limited)
   api/vets/route.ts          ✓ # Overpass vet search near a lat/lon, cached a week per ~100m
+  api/product/route.ts       ✓ # POST {url}: shop page -> name, image (data: URI), price in pence; SSRF-guarded, 20 per IP per 10 min
 components/
   Simulator.tsx              ✓ # form, cards, side-by-side table, chart, vets, breakdown
   Resume.tsx                 ✓ # Landlord Pet Resume + shopping checklist (print / copy as text)
@@ -26,7 +27,10 @@ lib/
   location.ts                ✓ # postcode -> region + lat/lon; Overpass results -> nearest vets
   location.test.ts           ✓
   supabase.ts                ✓ # server-only Supabase client, httpOnly session cookies
-  validate.ts                ✓ # server-side validation for every client input
+  validate.ts                ✓ # server-side validation for every client input (incl. product links)
+  product.ts                 ✓ # pure: product name/price/image from JSON-LD, Open Graph or <title>
+  fetch-safe.ts              ✓ # https fetch that refuses private/loopback addresses at connect time
+  ratelimit.ts               ✓ # hit_rate_limit helpers shared by server actions and API routes
   crypto.ts                  ✓ # AES-256-GCM for postcodes at rest
   security.test.ts           ✓
 proxy.ts                     ✓ # CSP nonce, security headers, HTTPS redirect, session refresh
@@ -101,6 +105,7 @@ The app runs without Supabase (accounts and saving are hidden). To enable them:
 | Trim API responses | Pages select only the columns they show. `/api/vets` returns only displayed fields. Error messages are generic. |
 | Security headers | Nonce-based CSP with `strict-dynamic`, HSTS, nosniff, `frame-ancestors 'none'`/X-Frame-Options, Referrer-Policy, Permissions-Policy, COOP. `X-Powered-By` is removed. |
 | Force HTTPS | 308 redirect in `proxy.ts`, HSTS (preload-ready) and `upgrade-insecure-requests`. |
+| SSRF protection | `/api/product` fetches user-supplied links only through `lib/fetch-safe.ts`: https and port 443 only, no credentials or IP-literal hosts, and DNS is resolved inside the socket's own `lookup`, which refuses loopback, private, link-local, CGNAT, multicast and ULA addresses (and IPv4-mapped forms), so DNS rebinding can't slip past. Redirects (max 3) are re-checked, 8 s timeout, 1.5 MB page / 1 MB image caps, SVG images refused, 20 lookups per IP per 10 minutes (fails closed). Images are returned as `data:` URIs so the CSP is unchanged. |
 | Scan dependencies | `npm audit` in CI (fails on high severity) and weekly Dependabot updates. |
 
 ## Environment
@@ -115,3 +120,7 @@ Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to show a Google map under the postcode bo
 - Optionally set `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` to a map ID from Google Cloud (Map Management); it falls back to `DEMO_MAP_ID`. A map ID is required for the pin and for the map to follow the system light/dark theme.
 - Privacy: the exact point stays in the browser. Only the existing `/api/vets` query receives it; saved scenarios still store just the encrypted postcode. `proxy.ts` allows the Google hosts the Maps JS CSP guide lists.
 - The artifact preview (`npm run preview:html`) never renders the map.
+
+## Credits
+
+Pet silhouettes are from [game-icons.net](https://game-icons.net) by Lorc, Delapouite and contributors, licensed [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). UI icons are [Phosphor](https://github.com/phosphor-icons/core) (MIT). Both reach the app through `npm run art`, which writes `lib/art.ts`.

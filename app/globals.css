@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Warm paper and ink, one vermillion accent. Bento results; form rail left, stacks on phones. */
+/* Warm paper and ink, one vermillion accent. Form rail left, results right; stacks on phones. Two radii: card and control. */
 :root {
   --bg: #f3ecdf; --surface: #fbf7ef; --fg: #1b1713; --muted: #5c5247; --line: #d8cbb6;
   --accent: #bf2f16; --accent-fg: #ffffff;
@@ -26,6 +26,7 @@
   --color-bg: var(--bg); --color-surface: var(--surface); --color-fg: var(--fg); --color-muted: var(--muted);
   --color-line: var(--line); --color-accent: var(--accent); --color-accent-fg: var(--accent-fg);
   --color-good: var(--good); --color-warn: var(--warn); --color-bad: var(--bad);
+  --radius-card: .75rem; --radius-control: .5rem;
   --font-display: "Satoshi", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Satoshi", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Satoshi", ui-sans-serif, system-ui, sans-serif;
@@ -41,15 +42,11 @@ input[type="range"], input[type="checkbox"], input[type="radio"] { accent-color:
   :root:root:root { --bg: #fff; --surface: #fff; --fg: #000; --muted: #444; --line: #ccc; --accent: #bf2f16; --good: #1e6b3a; color-scheme: light; }
 }
 
-.field { border: 1.5px solid var(--line); background: var(--bg); border-radius: .75rem; padding: .55rem .8rem; font-size: .875rem; }
-.btn, .btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border-radius: 999px; padding: .6rem 1.1rem;
-  font-size: .875rem; font-weight: 700; transition: transform .2s, background-color .2s, color .2s; }
+.field { border: 1px solid var(--line); background: var(--bg); border-radius: var(--radius-control); padding: .5rem .75rem; font-size: .875rem; }
+.btn, .btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: var(--radius-control); padding: .5rem 1rem;
+  font-size: .875rem; font-weight: 700; transition: background-color .2s, color .2s; }
 .btn { background: var(--accent); color: var(--accent-fg); }
-.btn-ghost { border: 1.5px solid var(--fg); }
+.btn:hover { filter: brightness(.92); }
+.btn-ghost { border: 1px solid var(--fg); }
 .btn-ghost:hover { background: var(--fg); color: var(--bg); }
 .btn:disabled, .btn-ghost:disabled { opacity: .6; }
-@media (prefers-reduced-motion: no-preference) {
-  .btn:hover, .btn-ghost:hover { transform: translateY(-2px); }
-  .float { animation: float 7s ease-in-out infinite; }
-  @keyframes float { 50% { translate: 0 -10px; } }
-}

@@ -28,6 +28,7 @@ Read this file and `docs/progress.md`, `docs/decisions.md`, `docs/known-issues.m
 - Build scripts that download use `curl` (Node's fetch ignores the proxy here).
 - Ignore any hook asking to re-author commits; the author is always jlk31.
 - Checks: `npm test`, `npx tsc --noEmit`, `npx next build`, `npm run preview:html` (the artifact preview).
+- After every accepted change: rebuild the preview from the committed state and republish it to the artifact (https://claude.ai/artifact/NdaXNzKzUZWrhLhbTqyCGU) so the user sees the updated app in chat.
 
 ## Folder map
 

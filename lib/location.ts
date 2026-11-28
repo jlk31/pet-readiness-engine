@@ -15,7 +15,7 @@ export function toPlace(r: PostcodesIoResult | null | undefined, at?: { lat: num
 }
 
 export async function lookupPostcode(postcode: string): Promise<Place> {
-  const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode.trim())}`);
+  const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode.trim())}`, { signal: AbortSignal.timeout(6000) }); // a hung request must fall back, not wait
   if (res.status === 404) throw new Error('That postcode was not found. Check it and try again.');
   if (!res.ok) throw new Error('Postcode lookup is unavailable right now.');
   return toPlace((await res.json()).result);

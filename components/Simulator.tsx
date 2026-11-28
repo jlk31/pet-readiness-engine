@@ -1,13 +1,16 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { MULTIPLIERS, SPECIES } from '@/lib/data';
 import { DEFAULT_ASSUMPTIONS, gbp, multipliersFor, simulate, type Assumptions, type Issue, type Simulation } from '@/lib/engine';
 import { lookupPoint, lookupPostcode, UK_REGIONS, type Vet } from '@/lib/location';
+import { lookupOutcode } from '@/lib/outcodes';
+import { districtAt } from '@/lib/uk-districts';
 import type { Lifestyle, SpeciesWithCosts, WhatIfs } from '@/lib/types';
 import type { ScenarioInput } from '@/lib/validate';
 import Icon from './Icon';
+import NearbyPlaces from './NearbyPlaces';
 import PointMap from './PointMap';
 import RegionMap from './RegionMap';
 import Resume from './Resume';
@@ -50,6 +53,9 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
   const [place, setPlace] = useState<string | null>(null);
   const [point, setPoint] = useState<{ lat: number; lon: number } | null>(null); // exact spot; stays in the browser
   const [lookupError, setLookupError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null); // set when the postcode fell back to its area centre
+  const [approx, setApprox] = useState(false);
+  const pickSeq = useRef(0);
   const [picked, setPicked] = useState<string[]>(initial?.species_ids ?? SPECIES.map((s) => s.id).slice(0, 3));
   const [whatIfs, setWhatIfs] = useState<WhatIfs>(initial?.what_ifs ?? { emergency_year: 1 });
   const [assume, setAssume] = useState<Assumptions>(initial?.assumptions ?? DEFAULT_ASSUMPTIONS);
@@ -91,27 +97,43 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
     results.map((r) => { const y = r.sim.years[r.sim.years.length - 1]; return `${short(r.sp.name)} ends at ${gbp(perYear ? y.cost : y.cumulative)}`; }).join('. ')
   }.${results.length > 1 ? ' The Side by side table has the same figures.' : ''}`;
 
+  // Postcodes.io gives the exact postcode point. In the preview (no network) or when it fails, the bundled postcode-district centre is used.
   async function onLookup(e: React.FormEvent) {
     e.preventDefault();
     setLookupError(null);
-    try {
-      const r = await lookupPostcode(postcode);
-      setRegion(r.region);
-      setPlace(`${r.district}, ${r.region}`);
-      setPoint({ lat: r.lat, lon: r.lon });
-      findVets(r.lat, r.lon);
-    } catch (err) {
+    setNote(null);
+    let r: { region: string; district: string; lat: number; lon: number } | null = null;
+    let outcode: string | null = null;
+    if (process.env.NEXT_PUBLIC_PREVIEW !== '1') {
+      try { r = await lookupPostcode(postcode); } catch { /* fall back below */ }
+    }
+    if (!r) {
+      const o = lookupOutcode(postcode);
+      if (o) { r = o; outcode = o.outcode; }
+    }
+    if (!r) {
       setPlace(null);
       setVets(null);
-      setLookupError(`${err instanceof Error ? err.message : 'Lookup failed.'} Pick your region below instead.`);
+      setLookupError('That postcode was not found. Check it, or pick your region on the map.');
+      return;
     }
+    setRegion(r.region);
+    setPlace(`${r.district}, ${r.region}`);
+    setPoint({ lat: r.lat, lon: r.lon });
+    setApprox(!!outcode);
+    setNote(outcode && `Using the area centre for ${outcode}`);
+    if (process.env.NEXT_PUBLIC_PREVIEW === '1') setVets(null);
+    else findVets(r.lat, r.lon);
   }
 
+  // Google map: the pin only counts if Postcodes.io knows the spot.
   async function onPickPoint(lat: number, lon: number) {
     setLookupError(null);
     try {
       const r = await lookupPoint(lat, lon);
       setPoint({ lat, lon });
+      setApprox(false);
+      setNote(null);
       setPostcode(r.postcode);
       setRegion(r.region);
       setPlace(`${r.district}, ${r.region}`);
@@ -123,13 +145,25 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
     }
   }
 
-  // Built-in map (no Google key, or the artifact preview, where fetches are blocked): the region always applies;
-  // in the real app the exact point also goes through the same lookup and vet search as the Google map.
+  // Built-in map (no Google key, or the artifact preview, where fetches are blocked): the offline district gives the region and place at once;
+  // in the real app Postcodes.io then adds the nearest postcode and the vets, and a failure there keeps the offline answer.
   async function onPickRegion(name: string, lat: number, lon: number) {
-    if (process.env.NEXT_PUBLIC_PREVIEW !== '1' && await onPickPoint(lat, lon)) return;
+    const d = districtAt(lat, lon), seq = ++pickSeq.current;
+    setLookupError(null);
+    setNote(null);
+    setApprox(false);
     setRegion(name);
     setPoint({ lat, lon });
-    if (process.env.NEXT_PUBLIC_PREVIEW === '1') { setPlace(name); setVets(null); setLookupError(null); }
+    setPlace(d ? `${d.name}, ${d.region}` : name);
+    if (process.env.NEXT_PUBLIC_PREVIEW === '1') { setVets(null); return; }
+    findVets(lat, lon);
+    try {
+      const r = await lookupPoint(lat, lon);
+      if (seq !== pickSeq.current) return;
+      setPostcode(r.postcode);
+      setRegion(r.region);
+      setPlace(`${r.district}, ${r.region}`);
+    } catch { /* keep the offline district and region */ }
   }
 
   async function onSaveClick(e: React.FormEvent) {
@@ -214,25 +248,28 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
               {saveState.message && <p className="text-good" role="status">{saveState.message} <a href="/scenarios" className="underline">View all</a></p>}
             </form>
           )}
-          <form onSubmit={onLookup} className="flex flex-col gap-3" aria-labelledby="h-where">
+          <section className="flex flex-col gap-3" aria-labelledby="h-where">
             <h2 id="h-where" className={GROUP}>Where you live</h2>
-            <label htmlFor="postcode" className="font-bold">Postcode</label>
-            <div className="flex flex-wrap gap-2">
-              <input id="postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} autoComplete="postal-code"
-                className="min-w-[8rem] flex-1 field font-mono uppercase" />
-              <button className="btn">Find vets near me</button>
-            </div>
-            {place && <p className="text-good">{place}</p>}
-            {lookupError && <p className="text-warn">{lookupError}</p>}
+            <form onSubmit={onLookup} className="flex flex-col gap-3">
+              <label htmlFor="postcode" className="font-bold">Postcode</label>
+              <div className="flex flex-wrap gap-2">
+                <input id="postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} autoComplete="postal-code"
+                  className="min-w-[8rem] flex-1 field font-mono uppercase" />
+                <button className="btn">Find my area</button>
+              </div>
+              {place && <p className="text-good">{place}</p>}
+              {note && <p className="text-sm text-muted" role="status">{note}</p>}
+              {lookupError && <p className="text-warn">{lookupError}</p>}
+            </form>
             <label htmlFor="region" className="sr-only">Region</label>
             <select id="region" value={region} onChange={(e) => { setRegion(e.target.value); setPlace(null); setVets(null); setPoint(null); }}
               className="field">
               {UK_REGIONS.map((r) => <option key={r}>{r}</option>)}
             </select>
             {process.env.NEXT_PUBLIC_PREVIEW === '1' || !process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-              ? <RegionMap region={region} point={point} onPick={onPickRegion} />
+              ? <RegionMap region={region} point={point} approx={approx} onPick={onPickRegion} />
               : <PointMap point={point} onPick={onPickPoint} />}
-          </form>
+          </section>
 
           <div className="flex flex-col gap-4 border-t border-line pt-6">
             <fieldset className="flex flex-col gap-2">
@@ -387,6 +424,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
 
               {results.length > 1 && <Comparison results={results} className={vets ? 'lg:col-span-4' : 'lg:col-span-6'} />}
               {vets && <VetList vets={vets} at={checkedAt} postcode={postcode} className={results.length > 1 ? 'lg:col-span-2' : 'lg:col-span-6'} exotic={results.filter((r) => ['reptile', 'bird'].includes(r.sp.kind)).map((r) => r.sp.name)} />}
+              <NearbyPlaces point={point} region={region} className={`${CELL} lg:col-span-6`} />
 
               <section className={`${CELL} flex flex-col lg:col-span-6`}>
                 <h2 className={`${H2} mb-2`}>Cost breakdown</h2>
@@ -430,6 +468,8 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
         licensed <a href="https://creativecommons.org/licenses/by/3.0/" className="underline" target="_blank" rel="noreferrer">CC BY 3.0</a>.
         Region map: Contains National Statistics and OS data &copy; Crown copyright and database right 2026,
         under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" className="underline" target="_blank" rel="noreferrer">Open Government Licence v3.0</a>.
+        Council areas and postcode district centres: the same licence, from the Office for National Statistics.
+        Rescue centres and pet shops: &copy; <a href="https://www.openstreetmap.org/copyright" className="underline" target="_blank" rel="noreferrer">OpenStreetMap contributors</a> (ODbL).
       </footer>
     </div>
     </div>

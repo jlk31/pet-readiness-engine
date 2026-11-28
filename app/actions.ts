@@ -1,31 +1,19 @@
 'use server';
 
-import { createHash } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { encrypt } from '@/lib/crypto';
+import { allowed, hash, ipFromHeaders } from '@/lib/ratelimit';
 import { createClient, getUser } from '@/lib/supabase';
 import { isUuid, parseCredentials, parseScenario } from '@/lib/validate';
 
 export type FormState = { error?: string; message?: string };
 
-type Supabase = NonNullable<Awaited<ReturnType<typeof createClient>>>;
 const NOT_CONFIGURED = { error: 'Accounts are not set up on this server yet.' };
 
-// Keys are hashed so the rate-limit table never stores emails or IPs.
-const hash = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 40);
-
 async function clientIp() {
-  const h = await headers();
-  // ponytail: trusts the host's proxy headers (Vercel/Netlify set x-real-ip); behind another proxy, use its header
-  return h.get('x-real-ip') ?? h.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
-}
-
-/** Fails closed: if the limiter errors, the request is refused. */
-async function allowed(sb: Supabase, key: string, max: number, windowSeconds: number) {
-  const { data, error } = await sb.rpc('hit_rate_limit', { p_key: key, p_max: max, p_window_seconds: windowSeconds });
-  return !error && data === true;
+  return ipFromHeaders(await headers());
 }
 
 const captcha = (form: FormData) => (form.get('cf-turnstile-response') as string | null) ?? undefined;

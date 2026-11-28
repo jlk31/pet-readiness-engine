@@ -97,3 +97,19 @@ export function parseCredentials(form: FormData): Result<{ email: string; passwo
   if (password.length < 10 || Buffer.byteLength(password) > 72) return { ok: false, error: 'Use a password of 10 to 72 characters.' };
   return { ok: true, value: { email, password } };
 }
+
+// Public DNS names only: at least one dot, letter-led TLD (so no IP literals, even odd forms like 2130706433).
+const PUBLIC_HOST = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{1,62}$/;
+const INTERNAL_SUFFIX = /\.(localhost|local|internal)$/;
+
+/** A shop page link: https, port 443, no credentials, public hostname. Returns the normalised URL without #fragment.
+ *  The IP check at connect time (lib/fetch-safe.ts) is what stops names that resolve to private addresses. */
+export function parseProductUrl(v: unknown): Result<string> {
+  const bad = { ok: false, error: 'Enter a link to a product page starting with https://.' } as const;
+  if (typeof v !== 'string' || v.length > 2048) return bad;
+  let u: URL;
+  try { u = new URL(v.trim()); } catch { return bad; }
+  if (u.protocol !== 'https:' || u.username || u.password || u.port || !PUBLIC_HOST.test(u.hostname) || INTERNAL_SUFFIX.test(u.hostname)) return bad;
+  u.hash = '';
+  return { ok: true, value: u.href };
+}

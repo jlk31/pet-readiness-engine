@@ -11,9 +11,14 @@
 - Redesign: Satoshi everywhere, Fluent Emoji + Phosphor art (MIT), editorial hero, illustrated species tiles, bento results, warm paper/vermillion palette (light + dark).
 - Exact-location Google map (follows system theme); anti-AI-look pass (game-icons silhouettes, plain copy, flat layout); shopping checklist with product links, quantities, kit toggles and live total.
 
+- Supabase connected (free plan, project ayginbjemclefyrirbmt): migrations + seed applied, security.sql passes live, sign-in rate limit verified end to end.
+- Product reader works without Supabase (memory rate limit); shopping list pictures downscaled in the browser.
+- Accessibility pass (axe 0 violations, 44px targets, AAA body text); offline UK data (outcodes, districts, shelters, pet shops, labels); zoomable labelled map with search, markers and geolocation.
+
 ## Next
-- Connect Supabase so the product link reader (rate-limited) works; add a Google Maps key.
-- Connect a real Supabase project and test sign-in end to end.
+- Recolour (evergreen + apricot) and remove the coordinate controls (in progress).
+- Deploy (e.g. Vercel) and set the Supabase site/redirect URLs and env vars there; add a Google Maps key for street-level maps.
+- Test a real sign-up confirmation email end to end.
 - Parks near the postcode for dogs; more species in seed.json.
 
 ## Log

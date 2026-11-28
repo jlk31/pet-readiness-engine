@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { extractProduct } from './product.ts';
@@ -56,4 +57,22 @@ test('extractProduct: caps title at 120, ignores bad JSON-LD, null when nothing 
   assert.equal(long.title.length, 120);
   assert.equal(extractProduct('<title>About us</title><p>Hello</p>', PAGE), null);
   assert.equal(extractProduct('', PAGE), null);
+});
+
+// Trimmed from real pages (ld+json, og/product meta, <title>), 2026-11-28.
+const fixture = (n: number) => readFileSync(new URL(`./fixtures/shop${n}.html`, import.meta.url), 'utf8');
+
+test('extractProduct: real Wix shop page (Max & Woody\'s)', () => {
+  const p = extractProduct(fixture(3), 'https://www.maxandwoodys.co.uk/product-page/singha-large-cat-scratcher-lounger')!;
+  assert.equal(p.title, 'Singha Design large cat scratcher & lounger');
+  assert.equal(p.pricePence, 12500);
+  assert.equal(p.currency, 'GBP');
+  assert.match(p.image!, /^https:\/\/static\.wixstatic\.com\//);
+});
+
+test('extractProduct: real US-priced page (Moonbox) has no pence, keeps USD', () => {
+  const p = extractProduct(fixture(1), 'https://moonlitterbox.com/')!;
+  assert.equal(p.title, 'Moonbox Self-Cleaning Litter Box');
+  assert.equal(p.pricePence, null);
+  assert.equal(p.currency, 'USD');
 });

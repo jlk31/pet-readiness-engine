@@ -37,3 +37,23 @@ export function parseCoords(text: string): { lat: number; lon: number } | null {
   const lat = +m[1], lon = +m[2];
   return lat >= UK_BOX.lat[0] && lat <= UK_BOX.lat[1] && lon >= UK_BOX.lon[0] && lon <= UK_BOX.lon[1] ? { lat, lon } : null;
 }
+
+export const easeOut = (t: number) => 1 - (1 - Math.min(Math.max(t, 0), 1)) ** 3;
+
+/** The view part-way from `a` to `b` (t 0..1): zoom moves by ratio, the centre in a straight line, so a fly-to feels even. */
+export function lerpView(a: View, b: View, t: number, bounds: View): View {
+  if (t >= 1) return b;
+  const za = zoomOf(a, bounds), zb = zoomOf(b, bounds);
+  const ax = a.x + a.w / 2, ay = a.y + a.h / 2;
+  return viewAt(ax + (b.x + b.w / 2 - ax) * t, ay + (b.y + b.h / 2 - ay) * t, za * (zb / za) ** t, bounds);
+}
+
+/** One SVG unit is 0.01 degrees of latitude. */
+export const KM_PER_UNIT = 1.11195;
+
+/** A round-number scale bar (1, 2 or 5 times a power of ten) that fits in `maxPx`, given SVG units per screen pixel. */
+export function scaleBar(unitsPerPx: number, maxPx = 96): { km: number; px: number; label: string } {
+  const kmPerPx = unitsPerPx * KM_PER_UNIT, max = maxPx * kmPerPx, p = 10 ** Math.floor(Math.log10(max));
+  const km = [5, 2, 1].map((m) => m * p).find((k) => k <= max) ?? p;
+  return { km, px: km / kmPerPx, label: km >= 1 ? `${km} km` : `${Math.round(km * 1000)} m` };
+}

@@ -1,16 +1,17 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { MULTIPLIERS, SPECIES } from '@/lib/data';
 import { DEFAULT_ASSUMPTIONS, gbp, multipliersFor, simulate, type Assumptions, type Issue, type Simulation } from '@/lib/engine';
 import { lookupPoint, lookupPostcode, UK_REGIONS, type Vet } from '@/lib/location';
 import { lookupOutcode } from '@/lib/outcodes';
+import { nearestPlaces } from '@/lib/places';
 import { districtAt } from '@/lib/uk-districts';
 import type { Lifestyle, SpeciesWithCosts, WhatIfs } from '@/lib/types';
 import type { ScenarioInput } from '@/lib/validate';
 import Icon from './Icon';
-import NearbyPlaces from './NearbyPlaces';
+import NearbyPlaces, { type Nearby } from './NearbyPlaces';
 import PointMap from './PointMap';
 import RegionMap from './RegionMap';
 import Resume from './Resume';
@@ -56,6 +57,11 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
   const [note, setNote] = useState<string | null>(null); // set when the postcode fell back to its area centre
   const [approx, setApprox] = useState(false);
   const pickSeq = useRef(0);
+  // Nearest rescue centres and pet shops: listed below and drawn on the built-in map. `n` changes on every pick so picking the same one again flies there again.
+  const found = useMemo<Nearby | null>(() => point && { shelter: nearestPlaces(point.lat, point.lon, 'shelter'), petshop: nearestPlaces(point.lat, point.lon, 'petshop') }, [point]);
+  const [sel, setSel] = useState<{ key: string; n: number } | null>(null);
+  useEffect(() => setSel(null), [point]);
+  const selectPlace = (key: string) => setSel((s) => ({ key, n: (s?.n ?? 0) + 1 }));
   const [picked, setPicked] = useState<string[]>(initial?.species_ids ?? SPECIES.map((s) => s.id).slice(0, 3));
   const [whatIfs, setWhatIfs] = useState<WhatIfs>(initial?.what_ifs ?? { emergency_year: 1 });
   const [assume, setAssume] = useState<Assumptions>(initial?.assumptions ?? DEFAULT_ASSUMPTIONS);
@@ -267,7 +273,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
               {UK_REGIONS.map((r) => <option key={r}>{r}</option>)}
             </select>
             {process.env.NEXT_PUBLIC_PREVIEW === '1' || !process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-              ? <RegionMap region={region} point={point} approx={approx} onPick={onPickRegion} />
+              ? <RegionMap region={region} point={point} approx={approx} onPick={onPickRegion} found={found} selected={sel} onSelect={selectPlace} />
               : <PointMap point={point} onPick={onPickPoint} />}
           </section>
 
@@ -424,7 +430,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
 
               {results.length > 1 && <Comparison results={results} className={vets ? 'lg:col-span-4' : 'lg:col-span-6'} />}
               {vets && <VetList vets={vets} at={checkedAt} postcode={postcode} className={results.length > 1 ? 'lg:col-span-2' : 'lg:col-span-6'} exotic={results.filter((r) => ['reptile', 'bird'].includes(r.sp.kind)).map((r) => r.sp.name)} />}
-              <NearbyPlaces point={point} region={region} className={`${CELL} lg:col-span-6`} />
+              <NearbyPlaces found={found} region={region} className={`${CELL} lg:col-span-6`} selected={sel?.key ?? null} onSelect={selectPlace} />
 
               <section className={`${CELL} flex flex-col lg:col-span-6`}>
                 <h2 className={`${H2} mb-2`}>Cost breakdown</h2>
@@ -469,7 +475,7 @@ export default function Simulator({ account = null, initial, onSave, onSignOut }
         Region map: Contains National Statistics and OS data &copy; Crown copyright and database right 2026,
         under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" className="underline" target="_blank" rel="noreferrer">Open Government Licence v3.0</a>.
         Council areas and postcode district centres: the same licence, from the Office for National Statistics.
-        Rescue centres and pet shops: &copy; <a href="https://www.openstreetmap.org/copyright" className="underline" target="_blank" rel="noreferrer">OpenStreetMap contributors</a> (ODbL).
+        County names on the map: the same licence. Rescue centres, pet shops, and city and town names: &copy; <a href="https://www.openstreetmap.org/copyright" className="underline" target="_blank" rel="noreferrer">OpenStreetMap contributors</a> (ODbL).
       </footer>
     </div>
     </div>

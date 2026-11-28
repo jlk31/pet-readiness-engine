@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "audit": "npm audit --audit-level=high",
     "art": "node scripts/gen-art.mjs",
-    "data": "node scripts/gen-outcodes.mjs && node scripts/gen-uk-districts.mjs && node scripts/gen-places.mjs"
+    "data": "node scripts/gen-outcodes.mjs && node scripts/gen-uk-districts.mjs && node scripts/gen-places.mjs && node scripts/gen-labels.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

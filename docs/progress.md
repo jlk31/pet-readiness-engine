@@ -21,3 +21,4 @@
 - 2026-11-28: Supabase accounts + security hardening. Omega setup added.
 - 2026-11-28: Redesign via orchestrated workers (2 Haiku builders, Sonnet engineer, Sonnet reviewer); every check rerun by the orchestrator.
 - 2026-11-28: Map, anti-AI pass, product link reader (SSRF-safe) and shopping list; tested against the user's real Max & Woody's and Moonbox pages.
+- 2026-11-28: Zoomable map with county/city/town labels, offline place search, fly-to, markers for nearby shelters and shops; geolocation allowed for self; Supabase connected (free plan).

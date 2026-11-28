@@ -49,3 +49,25 @@ test('parseCoords: comma or space, signs, UK box only', () => {
   assert.deepEqual(parseCoords('55,-3'), { lat: 55, lon: -3 });
   for (const s of ['', '54.5', 'a, b', '48.8566, 2.3522', '40.7, -74', '54.5, -3.1, 2', '95, 0', '54.5;-3.1']) assert.equal(parseCoords(s), null, s);
 });
+
+test('lerpView: starts at a, ends at b, zoom moves by ratio, stays in bounds', async () => {
+  const { lerpView, easeOut } = await import('./map-view.ts');
+  const a = viewAt(0, 100, 1, B), b = viewAt(300, 500, 16, B);
+  for (const k of ['x', 'y', 'w', 'h'] as const) near(lerpView(a, b, 0, B)[k], a[k]);
+  assert.deepEqual(lerpView(a, b, 1, B), b);
+  near(zoomOf(lerpView(a, b, 0.5, B), B), 4); // sqrt(1 * 16)
+  for (const t of [0.1, 0.4, 0.8]) { const v = lerpView(a, b, t, B); assert.ok(v.x >= B.x && v.y >= B.y && v.x + v.w <= B.x + B.w && v.y + v.h <= B.y + B.h); }
+  assert.equal(easeOut(0), 0); assert.equal(easeOut(1), 1); assert.ok(easeOut(0.5) > 0.5); assert.equal(easeOut(5), 1);
+});
+
+test('scaleBar: 1, 2 or 5 times a power of ten that fits, and its width matches the distance', async () => {
+  const { scaleBar, KM_PER_UNIT } = await import('./map-view.ts');
+  for (const upp of [0.03, 0.1, 0.35, 0.9, 1.8]) {
+    const s = scaleBar(upp);
+    assert.ok(s.px <= 96 && s.px > 96 / 2.6, `${upp}: ${s.px}`);
+    near(s.px * upp * KM_PER_UNIT, s.km);
+    assert.match(String(s.km), /^(1|2|5)(0*)$|^0\.(5|2|1)$/);
+  }
+  assert.equal(scaleBar(1.2).label, '100 km');
+  assert.equal(scaleBar(0.005).label, '500 m');
+});

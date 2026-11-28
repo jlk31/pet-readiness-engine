@@ -27,6 +27,7 @@ mkdirSync('dist', { recursive: true });
 writeFileSync('dist/preview.html', `<!doctype html>
 <html lang="en-GB">
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Pawprint Ledger</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>${fontCss}</style>

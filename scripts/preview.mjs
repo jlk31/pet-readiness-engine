@@ -24,7 +24,8 @@ for (const [, u] of [...fontCss.matchAll(/url\(["']?([^"')]+\.woff2)["']?\)/g)])
 }
 
 mkdirSync('dist', { recursive: true });
-writeFileSync('dist/preview.html', `<title>Pawprint Ledger</title>
+writeFileSync('dist/preview.html', `<meta charset="utf-8">
+<title>Pawprint Ledger</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>${fontCss}</style>
 <style>${css}</style>
